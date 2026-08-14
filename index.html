@@ -445,28 +445,82 @@
   .sheet-bar {
     flex: none;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 30px 1fr 30px;
     align-items: center;
     gap: 8px;
-    padding: 14px 16px 10px;
+    padding: 14px 16px 12px;
   }
-  .sheet-bar .title { font-size: 17px; font-weight: 600; }
-  .sheet-bar .act {
+  .sheet-bar .title {
+    grid-column: 2;
+    text-align: center;
     font-size: 17px;
-    color: var(--blue);
-    padding: 0;
-    background: none;
+    font-weight: 600;
   }
-  .sheet-bar .act.right { text-align: right; font-weight: 600; }
-  .sheet-bar .act:disabled { color: var(--label-3); }
-  .sheet-bar .act:not(:disabled):active { opacity: .4; }
+
+  /* 닫기 X */
+  .sheet-close {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--fill-4);
+    color: var(--label-2);
+    padding: 0;
+    transition: opacity .15s ease;
+  }
+  .sheet-close:active { opacity: .5; }
 
   .sheet-body {
     overflow-y: auto;
-    padding: 6px 16px calc(20px + env(safe-area-inset-bottom));
+    padding: 4px 16px 20px;
     display: flex;
     flex-direction: column;
     gap: 18px;
+  }
+
+  /* 하단 등록 버튼 */
+  .sheet-foot {
+    flex: none;
+    padding: 8px 16px calc(14px + env(safe-area-inset-bottom));
+  }
+  .btn-submit {
+    width: 100%;
+    min-height: 50px;
+    border-radius: var(--r-card);
+    background: var(--blue);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.3;
+    transition: opacity .15s ease, background-color .15s ease;
+  }
+  .btn-submit:disabled { background: var(--fill-4); color: var(--label-3); }
+  .btn-submit:not(:disabled):active { opacity: .7; }
+
+  /* 등록 완료 알림 */
+  .toast {
+    position: absolute;
+    left: 16px; right: 16px;
+    bottom: calc(70px + env(safe-area-inset-bottom));
+    z-index: 90;
+    padding: 12px 16px;
+    border-radius: var(--r-card);
+    background: rgba(28, 28, 30, .94);
+    color: #fff;
+    font-size: 15px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity .28s ease, transform .28s ease;
+  }
+  .toast.is-on { opacity: 1; transform: none; }
+
+  /* 기록 목록의 상태 점 */
+  .log-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex: none;
   }
 
   .field-label {
@@ -930,9 +984,10 @@
 
   <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="sheet-bar">
-      <button class="act" type="button" id="cancelBtn">취소</button>
+      <button class="sheet-close" type="button" id="closeSheet" aria-label="닫기">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
       <span class="title" id="sheetTitle">키 현황 등록</span>
-      <button class="act right" type="button" id="saveBtn" disabled>저장</button>
     </div>
 
     <div class="sheet-body">
@@ -947,7 +1002,9 @@
       <div>
         <p class="field-label">키 번호</p>
         <div class="num-field">
-          <input id="noInput" type="text" inputmode="numeric" autocomplete="off"
+          <!-- inputmode=numeric + pattern 조합이 iOS에서 숫자 키패드를 띄운다 -->
+          <input id="noInput" type="text" inputmode="numeric" pattern="[0-9]*"
+                 autocomplete="off" maxlength="3"
                  placeholder="번호 입력" aria-label="키 번호">
           <span class="hint" id="rangeHint">1 – 200</span>
         </div>
@@ -980,7 +1037,13 @@
         </div>
       </div>
     </div>
+
+    <div class="sheet-foot">
+      <button class="btn-submit" type="button" id="submitBtn" disabled>등록하기</button>
+    </div>
   </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 </div><!-- /.app -->
 
@@ -1020,6 +1083,206 @@
         tab.setAttribute('aria-current', 'page');
       });
     });
+
+    /* ==========================================================
+       키 현황 연산
+       남자 200개(001–200), 여자 207개(001–207).
+       기본값은 전부 '정상'이고 상태가 바뀐 키만 예외로 저장한다.
+       정상 개수 = 전체 − 예외 개수 → 합이 항상 맞는다.
+       ========================================================== */
+    var TOTAL  = { m: 200, f: 207 };
+    var GENDER = { m: '남자', f: '여자' };
+    var STATUS = { ok: '정상', lost: '분실', broken: '고장', etc: '기타' };
+    var STORE  = 'baikal.keys.v1';
+
+    var data = { m: {}, f: {}, log: [] };
+
+    try {
+      var saved = localStorage.getItem(STORE);
+      if (saved) {
+        var p = JSON.parse(saved);
+        data.m = p.m || {};
+        data.f = p.f || {};
+        data.log = p.log || [];
+      }
+    } catch (e) { /* 저장소를 못 쓰면 이번 세션에서만 동작 */ }
+
+    function persist() {
+      try { localStorage.setItem(STORE, JSON.stringify(data)); } catch (e) {}
+    }
+
+    function countOf(g) {
+      var c = { ok: 0, lost: 0, broken: 0, etc: 0 };
+      var ex = data[g], n = 0;
+      for (var no in ex) {
+        if (Object.prototype.hasOwnProperty.call(ex, no)) { c[ex[no]]++; n++; }
+      }
+      c.ok = TOTAL[g] - n;
+      return c;
+    }
+
+    function put(id, v) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = v;
+    }
+    function pad3(n) { return ('00' + n).slice(-3); }
+
+    function ago(iso) {
+      var s = Math.floor((new Date() - new Date(iso)) / 1000);
+      if (s < 60) return '방금';
+      if (s < 3600) return Math.floor(s / 60) + '분 전';
+      if (s < 86400) return Math.floor(s / 3600) + '시간 전';
+      return Math.floor(s / 86400) + '일 전';
+    }
+
+    var logGroup = document.getElementById('logGroup');
+
+    function renderLog() {
+      if (!logGroup) return;
+      if (!data.log.length) {
+        logGroup.innerHTML =
+          '<p class="empty">아직 등록된 변경이 없습니다<br>모든 키가 정상 상태입니다</p>';
+        return;
+      }
+      logGroup.innerHTML = data.log.slice(0, 6).map(function (e) {
+        return '<div class="cell has-icon">' +
+                 '<span class="cell-ico"><span class="log-dot" style="background:var(--st-' + e.s + ')"></span></span>' +
+                 '<span class="cell-body">' +
+                   '<span class="cell-title">' + GENDER[e.g] + ' ' + pad3(e.no) + '번 · ' + STATUS[e.s] + '</span>' +
+                   '<span class="cell-sub">' + ago(e.at) + '</span>' +
+                 '</span>' +
+               '</div>';
+      }).join('');
+    }
+
+    function render() {
+      var m = countOf('m'), f = countOf('f');
+      put('mOk', m.ok); put('mLost', m.lost); put('mBroken', m.broken); put('mEtc', m.etc);
+      put('fOk', f.ok); put('fLost', f.lost); put('fBroken', f.broken); put('fEtc', f.etc);
+      put('tAll', TOTAL.m + TOTAL.f);
+      put('tOk',     m.ok     + f.ok);
+      put('tLost',   m.lost   + f.lost);
+      put('tBroken', m.broken + f.broken);
+      put('tEtc',    m.etc    + f.etc);
+      renderLog();
+    }
+
+    /* ---------- 등록 모달 ---------- */
+    var sheet     = document.getElementById('sheet');
+    var scrim     = document.getElementById('scrim');
+    var openBtn   = document.getElementById('openSheet');
+    var closeBtn  = document.getElementById('closeSheet');
+    var submitBtn = document.getElementById('submitBtn');
+    var noInput   = document.getElementById('noInput');
+    var noError   = document.getElementById('noError');
+    var rangeHint = document.getElementById('rangeHint');
+    var seg       = document.getElementById('genderSeg');
+    var pick      = document.getElementById('statusPick');
+    var toastEl   = document.getElementById('toast');
+
+    var draft = { g: 'm', no: null, s: null };
+    var toastTimer;
+
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('is-on');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toastEl.classList.remove('is-on'); }, 2400);
+    }
+
+    function syncGender() {
+      seg.querySelectorAll('button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.dataset.g === draft.g));
+      });
+      rangeHint.textContent = '1 – ' + TOTAL[draft.g];
+    }
+
+    function syncStatus() {
+      pick.querySelectorAll('button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.dataset.s === draft.s));
+      });
+    }
+
+    function validate() {
+      var max = TOTAL[draft.g];
+      var raw = noInput.value;
+      var n = parseInt(raw, 10);
+      var valid = raw !== '' && !isNaN(n) && n >= 1 && n <= max;
+
+      draft.no = valid ? n : null;
+
+      if (raw !== '' && !valid) {
+        noError.textContent = GENDER[draft.g] + ' 키는 1번부터 ' + max + '번까지 있습니다';
+        noError.classList.add('is-on');
+      } else {
+        noError.classList.remove('is-on');
+      }
+      submitBtn.disabled = !(valid && draft.s);
+    }
+
+    function openSheet() {
+      draft = { g: 'm', no: null, s: null };
+      noInput.value = '';
+      noError.classList.remove('is-on');
+      syncGender(); syncStatus(); validate();
+      scrim.classList.add('is-open');
+      sheet.classList.add('is-open');
+    }
+
+    function closeSheet() {
+      scrim.classList.remove('is-open');
+      sheet.classList.remove('is-open');
+      noInput.blur();
+    }
+
+    openBtn.addEventListener('click', openSheet);
+    closeBtn.addEventListener('click', closeSheet);
+    scrim.addEventListener('click', closeSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeSheet();
+    });
+
+    /* 숫자만 남긴다 — 키패드 외 입력이 들어와도 안전하게 */
+    noInput.addEventListener('input', function () {
+      var only = noInput.value.replace(/[^0-9]/g, '').slice(0, 3);
+      if (only !== noInput.value) noInput.value = only;
+      validate();
+    });
+
+    seg.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-g]');
+      if (!b) return;
+      draft.g = b.dataset.g;
+      syncGender();
+      validate();
+    });
+
+    pick.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-s]');
+      if (!b) return;
+      draft.s = b.dataset.s;
+      syncStatus();
+      validate();
+    });
+
+    submitBtn.addEventListener('click', function () {
+      if (submitBtn.disabled) return;
+      var g = draft.g, no = draft.no, s = draft.s;
+
+      /* 정상으로 되돌리면 예외에서 지운다 */
+      if (s === 'ok') delete data[g][no];
+      else data[g][no] = s;
+
+      data.log.unshift({ g: g, no: no, s: s, at: new Date().toISOString() });
+      data.log = data.log.slice(0, 30);
+
+      persist();
+      render();
+      closeSheet();
+      toast(GENDER[g] + ' ' + pad3(no) + '번 · ' + STATUS[s] + ' 등록됨');
+    });
+
+    render();
   })();
 </script>
 
