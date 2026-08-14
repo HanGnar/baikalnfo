@@ -405,8 +405,12 @@
   .total-cell .cell-title { font-weight: 600; }
   .total-value { font-size: 17px; font-weight: 600; }
   .cell + .stats { border-top: .5px solid var(--separator); }
-  .stats-4 { grid-template-columns: repeat(4, 1fr); }
-  .stats-4 .stat-num { font-size: 22px; }
+
+  /* .stats(3칸)가 파일 뒤쪽에 있어 덮어쓰므로 선택자를 겹쳐 우선순위를 올린다 */
+  .stats.stats-4 { grid-template-columns: repeat(4, 1fr); }
+  .stats-4 .stat { padding: 11px 3px 10px; }
+  .stats-4 .stat-num { font-size: 21px; }
+  .stats-4 .stat-label { font-size: 12px; }
 
   /* ---------- 빈 상태 ---------- */
   .empty {
