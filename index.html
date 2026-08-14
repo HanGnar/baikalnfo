@@ -15,7 +15,6 @@
     --bg-cell-2:   #F2F2F7;   /* tertiarySystemGroupedBackground */
     --bg-nav:      rgba(242, 242, 247, .82);
     --fill-4:      rgba(116, 116, 128, .08);  /* quaternarySystemFill */
-    --backdrop:    #CDCDD4;   /* 기기 바깥 여백 (데스크탑 전용) */
 
     /* 텍스트 */
     --label:    #000000;
@@ -60,7 +59,6 @@
       --bg-cell-2:  #2C2C2E;
       --bg-nav:     rgba(22, 22, 24, .82);
       --fill-4:     rgba(118, 118, 128, .18);
-      --backdrop:   #141417;
 
       --label:   #FFFFFF;
       --label-2: rgba(235, 235, 245, .60);
@@ -85,7 +83,6 @@
     --bg-cell-2:  #2C2C2E;
     --bg-nav:     rgba(22, 22, 24, .82);
     --fill-4:     rgba(118, 118, 128, .18);
-    --backdrop:   #141417;
     --label:   #FFFFFF;
     --label-2: rgba(235, 235, 245, .60);
     --label-3: rgba(235, 235, 245, .30);
@@ -106,7 +103,6 @@
     --bg-cell-2:  #F2F2F7;
     --bg-nav:     rgba(242, 242, 247, .82);
     --fill-4:     rgba(116, 116, 128, .08);
-    --backdrop:   #CDCDD4;
     --label:   #000000;
     --label-2: rgba(60, 60, 67, .60);
     --label-3: rgba(60, 60, 67, .30);
@@ -128,11 +124,7 @@
 
   body {
     margin: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
-    display: grid;
-    place-items: center;
-    background: var(--backdrop);
+    background: var(--bg-grouped);
     color: var(--label);
     font-family: var(--sans);
     font-size: 17px;                 /* iOS Body */
@@ -165,66 +157,20 @@
   .tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
 
   /* ============================================================
-     기기 프레임 — 데스크탑에서만 보인다. 실제 폰에서는 전체화면.
-     ============================================================ */
-  .device {
-    padding: 13px;
-    border-radius: 63px;
-    background: linear-gradient(160deg, #3A3D44, #16171A 45%, #26282D);
-    box-shadow:
-      0 0 0 1.5px rgba(0, 0, 0, .55),
-      0 30px 60px -12px rgba(0, 0, 0, .45),
-      0 8px 20px -6px rgba(0, 0, 0, .3);
-  }
-
-  .screen {
-    position: relative;
-    width: 393px;    /* iPhone 16 Pro */
-    height: 852px;
-    border-radius: 50px;
-    overflow: hidden;
-    background: var(--bg-grouped);
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* 다이내믹 아일랜드 */
-  .island {
-    position: absolute;
-    top: 11px; left: 50%;
-    transform: translateX(-50%);
-    width: 125px; height: 36px;
-    border-radius: 20px;
-    background: #000;
-    z-index: 60;
-    pointer-events: none;
-  }
-
-  /* 상태 표시줄 */
-  .statusbar {
-    flex: none;
-    height: 54px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 30px 0 34px;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: 0;
-    font-variant-numeric: tabular-nums;
-    z-index: 50;
-  }
-  .statusbar .icons { display: flex; align-items: center; gap: 6px; }
-
-  /* ============================================================
-     APP SHELL — 화면은 고정, 콘텐츠만 스크롤
+     APP SHELL — 모바일 화면 그 자체. 화면은 고정, 콘텐츠만 스크롤.
      ============================================================ */
   .app {
-    flex: 1;
-    min-height: 0;
+    position: relative;
+    width: 100%;
+    max-width: 430px;
+    height: 100vh;
+    height: 100dvh;
+    margin: 0 auto;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     background: var(--bg-grouped);
+    padding-top: env(safe-area-inset-top);
   }
 
   /* ---------- 네비게이션 바 (iOS Large Title) ---------- */
@@ -690,7 +636,7 @@
     z-index: 30;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    padding-bottom: 20px;   /* 홈 인디케이터 영역 */
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
     background: var(--bg-nav);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     backdrop-filter: saturate(180%) blur(20px);
@@ -713,19 +659,6 @@
   .tab[aria-current="page"] { color: var(--blue); }
   .tab:active { opacity: .6; }
 
-  /* 홈 인디케이터 */
-  .home-bar {
-    position: absolute;
-    bottom: 8px; left: 50%;
-    transform: translateX(-50%);
-    width: 140px; height: 5px;
-    border-radius: 999px;
-    background: var(--label);
-    opacity: .85;
-    z-index: 60;
-    pointer-events: none;
-  }
-
   /* ---------- 등장 모션 ---------- */
   .rise { opacity: 0; transform: translateY(8px); animation: rise .45s cubic-bezier(.32, .72, 0, 1) forwards; }
   @keyframes rise { to { opacity: 1; transform: none; } }
@@ -735,52 +668,9 @@
     .rise { opacity: 1; transform: none; }
   }
 
-  /* ============================================================
-     실제 모바일 기기 — 프레임 없이 전체화면으로
-     ============================================================ */
-  @media (max-width: 520px) {
-    body { display: block; }
-
-    .device {
-      padding: 0;
-      border-radius: 0;
-      background: none;
-      box-shadow: none;
-    }
-
-    .screen {
-      width: 100%;
-      height: 100vh;
-      height: 100dvh;
-      border-radius: 0;
-    }
-
-    /* 기기가 진짜 상태 표시줄과 홈 인디케이터를 그리므로 가짜는 숨긴다 */
-    .island,
-    .statusbar,
-    .home-bar { display: none; }
-
-    .app { padding-top: env(safe-area-inset-top); }
-    .tabbar { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
-  }
 </style>
 
-<div class="device">
- <div class="screen">
-
-  <div class="island" aria-hidden="true"></div>
-
-  <!-- ============ 상태 표시줄 ============ -->
-  <div class="statusbar" aria-hidden="true">
-    <span>9:41</span>
-    <span class="icons">
-      <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
-      <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 11.6 6.2 9.1a3.4 3.4 0 0 1 4.6 0zM3.6 6.4 2 4.7a9.7 9.7 0 0 1 13 0l-1.6 1.7a7.4 7.4 0 0 0-9.8 0z"/></svg>
-      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" stroke="currentColor" stroke-opacity=".4" stroke-width="1.1"/><rect x="2.3" y="2.3" width="15" height="7.4" rx="2" fill="currentColor"/><path d="M23.2 4.2v3.6a2 2 0 0 0 0-3.6z" fill="currentColor" fill-opacity=".4"/></svg>
-    </span>
-  </div>
-
-  <div class="app">
+<div class="app">
 
   <!-- ============ 네비게이션 바 ============ -->
   <header class="navbar" id="navbar">
@@ -1012,8 +902,6 @@
     </button>
   </nav>
 
-  </div><!-- /.app -->
-
   <!-- ============ 키 현황 등록 시트 ============ -->
   <div class="scrim" id="scrim"></div>
 
@@ -1071,9 +959,7 @@
     </div>
   </div>
 
-  <div class="home-bar" aria-hidden="true"></div>
- </div><!-- /.screen -->
-</div><!-- /.device -->
+</div><!-- /.app -->
 
 <script>
   (function () {
