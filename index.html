@@ -1,120 +1,124 @@
 <title>바이칼 휘트니스 서현점 — 근무 관리</title>
 
 <style>
+  /* Pretendard 가변폰트 (동적 서브셋) — 폰·타 기기용.
+     맥에는 로컬 설치본이 있어 그쪽이 먼저 잡힌다. */
+  @import url("https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
+
   /* ============================================================
-     TOKENS
-     색이 쓰이는 곳은 두 군데뿐 — 성별 구분(남/여), 키 상태(4종).
-     버튼·탭 같은 조작 요소는 전부 무채색으로 둔다.
+     TOKENS — Apple iOS 디자인 시스템
      ============================================================ */
   :root {
-    --ground:    #E4E7E6;
-    --surface:   #FFFFFF;
-    --surface-2: #F1F4F3;
-    --surface-3: #E8ECEB;
-    --ink:       #141817;
-    --ink-2:     #4C5453;
-    --ink-3:     #838C8A;
-    --line:      #DCE1E0;
-    --line-2:    #C9D0CE;
+    /* 배경 */
+    --bg-grouped:  #F2F2F7;   /* systemGroupedBackground */
+    --bg-cell:     #FFFFFF;   /* secondarySystemGroupedBackground */
+    --bg-cell-2:   #F2F2F7;   /* tertiarySystemGroupedBackground */
+    --bg-nav:      rgba(242, 242, 247, .82);
+    --fill-4:      rgba(116, 116, 128, .08);  /* quaternarySystemFill */
+    --backdrop:    #CDCDD4;   /* 기기 바깥 여백 (데스크탑 전용) */
 
-    --accent:    #141817;
-    --on-accent: #FFFFFF;
+    /* 텍스트 */
+    --label:    #000000;
+    --label-2:  rgba(60, 60, 67, .60);
+    --label-3:  rgba(60, 60, 67, .30);
 
-    /* 성별 */
-    --male:   #2F6FD9;
-    --female: #D93B72;
+    /* 구분선 */
+    --separator: rgba(60, 60, 67, .29);
+    --sep-opaque: #C6C6C8;
 
-    /* 키 상태 */
-    --st-ok:     #1F9E6E;  /* 정상 · 초록 */
-    --st-lost:   #D0453B;  /* 분실 · 빨강 */
-    --st-broken: #DE7B12;  /* 고장 · 주황 */
-    --st-etc:    #2F6FD9;  /* 기타 · 파랑 */
+    /* 시스템 컬러 */
+    --blue:   #007AFF;
+    --green:  #34C759;
+    --red:    #FF3B30;
+    --orange: #FF9500;
+    --pink:   #FF2D55;
+    --gray:   #8E8E93;
+    --gray-3: #C7C7CC;
 
-    --shadow-1: 0 1px 2px rgba(20, 24, 23, .06), 0 1px 1px rgba(20, 24, 23, .04);
-    --shadow-2: 0 6px 24px rgba(20, 24, 23, .10), 0 1px 2px rgba(20, 24, 23, .06);
-    --shadow-tab: 0 -1px 0 var(--line), 0 -8px 24px rgba(20, 24, 23, .06);
+    /* 의미 배정 */
+    --st-ok:     var(--green);   /* 정상 */
+    --st-lost:   var(--red);     /* 분실 */
+    --st-broken: var(--orange);  /* 고장 */
+    --st-etc:    var(--blue);    /* 기타 */
+    --male:      var(--blue);
+    --female:    var(--pink);
 
-    --sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard",
-            "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, "Roboto Mono", monospace;
+    /* 타이포 — 자간 -2% 통일, 타이틀 130% / 본문 160% */
+    --sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+            "Apple SD Gothic Neo", system-ui, "Segoe UI", Roboto, sans-serif;
+    --tracking: -0.02em;
+    --lh-title: 1.3;
+    --lh-body:  1.6;
 
-    --r-card: 16px;
-    --r-chip: 999px;
+    --r-card: 12px;   /* iOS inset grouped */
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --ground:    #080A0A;
-      --surface:   #151918;
-      --surface-2: #1D2221;
-      --surface-3: #262C2B;
-      --ink:       #EDF0EF;
-      --ink-2:     #A3ADAB;
-      --ink-3:     #6C7674;
-      --line:      #272D2C;
-      --line-2:    #343B3A;
+      --bg-grouped: #000000;
+      --bg-cell:    #1C1C1E;
+      --bg-cell-2:  #2C2C2E;
+      --bg-nav:     rgba(22, 22, 24, .82);
+      --fill-4:     rgba(118, 118, 128, .18);
+      --backdrop:   #141417;
 
-      --accent:    #EDF0EF;
-      --on-accent: #0B0E0D;
+      --label:   #FFFFFF;
+      --label-2: rgba(235, 235, 245, .60);
+      --label-3: rgba(235, 235, 245, .30);
 
-      --male:   #6FA4FF;
-      --female: #FF77A6;
+      --separator:  rgba(84, 84, 88, .65);
+      --sep-opaque: #38383A;
 
-      --st-ok:     #34C48D;
-      --st-lost:   #FF6B5F;
-      --st-broken: #F59B2E;
-      --st-etc:    #6FA4FF;
-
-      --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
-      --shadow-2: 0 8px 28px rgba(0, 0, 0, .55);
-      --shadow-tab: 0 -1px 0 var(--line), 0 -8px 24px rgba(0, 0, 0, .4);
+      --blue:   #0A84FF;
+      --green:  #30D158;
+      --red:    #FF453A;
+      --orange: #FF9F0A;
+      --pink:   #FF375F;
+      --gray:   #8E8E93;
+      --gray-3: #48484A;
     }
   }
 
   :root[data-theme="dark"] {
-    --ground:    #080A0A;
-    --surface:   #151918;
-    --surface-2: #1D2221;
-    --surface-3: #262C2B;
-    --ink:       #EDF0EF;
-    --ink-2:     #A3ADAB;
-    --ink-3:     #6C7674;
-    --line:      #272D2C;
-    --line-2:    #343B3A;
-    --accent:    #EDF0EF;
-    --on-accent: #0B0E0D;
-    --male:   #6FA4FF;
-    --female: #FF77A6;
-    --st-ok:     #34C48D;
-    --st-lost:   #FF6B5F;
-    --st-broken: #F59B2E;
-    --st-etc:    #6FA4FF;
-    --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
-    --shadow-2: 0 8px 28px rgba(0, 0, 0, .55);
-    --shadow-tab: 0 -1px 0 var(--line), 0 -8px 24px rgba(0, 0, 0, .4);
+    --bg-grouped: #000000;
+    --bg-cell:    #1C1C1E;
+    --bg-cell-2:  #2C2C2E;
+    --bg-nav:     rgba(22, 22, 24, .82);
+    --fill-4:     rgba(118, 118, 128, .18);
+    --backdrop:   #141417;
+    --label:   #FFFFFF;
+    --label-2: rgba(235, 235, 245, .60);
+    --label-3: rgba(235, 235, 245, .30);
+    --separator:  rgba(84, 84, 88, .65);
+    --sep-opaque: #38383A;
+    --blue:   #0A84FF;
+    --green:  #30D158;
+    --red:    #FF453A;
+    --orange: #FF9F0A;
+    --pink:   #FF375F;
+    --gray:   #8E8E93;
+    --gray-3: #48484A;
   }
 
   :root[data-theme="light"] {
-    --ground:    #E4E7E6;
-    --surface:   #FFFFFF;
-    --surface-2: #F1F4F3;
-    --surface-3: #E8ECEB;
-    --ink:       #141817;
-    --ink-2:     #4C5453;
-    --ink-3:     #838C8A;
-    --line:      #DCE1E0;
-    --line-2:    #C9D0CE;
-    --accent:    #141817;
-    --on-accent: #FFFFFF;
-    --male:   #2F6FD9;
-    --female: #D93B72;
-    --st-ok:     #1F9E6E;
-    --st-lost:   #D0453B;
-    --st-broken: #DE7B12;
-    --st-etc:    #2F6FD9;
-    --shadow-1: 0 1px 2px rgba(20, 24, 23, .06), 0 1px 1px rgba(20, 24, 23, .04);
-    --shadow-2: 0 6px 24px rgba(20, 24, 23, .10), 0 1px 2px rgba(20, 24, 23, .06);
-    --shadow-tab: 0 -1px 0 var(--line), 0 -8px 24px rgba(20, 24, 23, .06);
+    --bg-grouped: #F2F2F7;
+    --bg-cell:    #FFFFFF;
+    --bg-cell-2:  #F2F2F7;
+    --bg-nav:     rgba(242, 242, 247, .82);
+    --fill-4:     rgba(116, 116, 128, .08);
+    --backdrop:   #CDCDD4;
+    --label:   #000000;
+    --label-2: rgba(60, 60, 67, .60);
+    --label-3: rgba(60, 60, 67, .30);
+    --separator:  rgba(60, 60, 67, .29);
+    --sep-opaque: #C6C6C8;
+    --blue:   #007AFF;
+    --green:  #34C759;
+    --red:    #FF3B30;
+    --orange: #FF9500;
+    --pink:   #FF2D55;
+    --gray:   #8E8E93;
+    --gray-3: #C7C7CC;
   }
 
   /* ============================================================
@@ -124,170 +128,226 @@
 
   body {
     margin: 0;
-    background: var(--ground);
-    color: var(--ink);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    background: var(--backdrop);
+    color: var(--label);
     font-family: var(--sans);
-    font-size: 15px;
-    line-height: 1.5;
+    font-size: 17px;                 /* iOS Body */
+    line-height: var(--lh-body);     /* 본문 160% */
+    letter-spacing: var(--tracking); /* 자간 -2% 통일 */
     -webkit-font-smoothing: antialiased;
     -webkit-text-size-adjust: 100%;
   }
 
-  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
-  h2, h3, p, ul { margin: 0; }
+  button {
+    font: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1, h2, h3, p, ul { margin: 0; }
   ul { list-style: none; padding: 0; }
 
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-
-  .mono {
-    font-family: var(--mono);
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
+  /* 타이틀 계열 — 행간 130% */
+  h1, h2, h3,
+  .num, .cell-title, .card-who, .tab, .stat-num, .btn-filled {
+    line-height: var(--lh-title);
   }
 
-  .eyebrow {
-    font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 6px; }
+
+  .tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
 
   /* ============================================================
-     APP SHELL
+     기기 프레임 — 데스크탑에서만 보인다. 실제 폰에서는 전체화면.
      ============================================================ */
-  .app {
-    max-width: 430px;
-    min-height: 100vh;
-    min-height: 100dvh;
-    margin: 0 auto;
-    background: var(--surface-2);
-    display: flex;
-    flex-direction: column;
+  .device {
+    padding: 13px;
+    border-radius: 63px;
+    background: linear-gradient(160deg, #3A3D44, #16171A 45%, #26282D);
+    box-shadow:
+      0 0 0 1.5px rgba(0, 0, 0, .55),
+      0 30px 60px -12px rgba(0, 0, 0, .45),
+      0 8px 20px -6px rgba(0, 0, 0, .3);
+  }
+
+  .screen {
     position: relative;
-    box-shadow: var(--shadow-2);
-  }
-
-  .scroll {
-    flex: 1;
+    width: 393px;    /* iPhone 16 Pro */
+    height: 852px;
+    border-radius: 50px;
+    overflow: hidden;
+    background: var(--bg-grouped);
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    padding: 2px 18px 104px;
-    overflow-x: hidden;
   }
 
-  /* ---------- 헤더 ---------- */
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background: color-mix(in srgb, var(--surface-2) 88%, transparent);
-    -webkit-backdrop-filter: saturate(160%) blur(14px);
-    backdrop-filter: saturate(160%) blur(14px);
-    border-bottom: 1px solid transparent;
-    padding: 14px 18px 12px;
+  /* 다이내믹 아일랜드 */
+  .island {
+    position: absolute;
+    top: 11px; left: 50%;
+    transform: translateX(-50%);
+    width: 125px; height: 36px;
+    border-radius: 20px;
+    background: #000;
+    z-index: 60;
+    pointer-events: none;
+  }
+
+  /* 상태 표시줄 */
+  .statusbar {
+    flex: none;
+    height: 54px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    transition: border-color .2s ease;
+    padding: 0 30px 0 34px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+    z-index: 50;
   }
-  .topbar.is-stuck { border-bottom-color: var(--line); }
+  .statusbar .icons { display: flex; align-items: center; gap: 6px; }
 
-  /* 로고 + 지점 정보 묶음 */
-  .brand {
+  /* ============================================================
+     APP SHELL — 화면은 고정, 콘텐츠만 스크롤
+     ============================================================ */
+  .app {
+    flex: 1;
+    min-height: 0;
     display: flex;
-    align-items: center;
-    gap: 11px;
-    min-width: 0;
+    flex-direction: column;
+    background: var(--bg-grouped);
   }
-  .logo {
-    width: 30px;
-    height: 35px;
-    flex: none;
-    display: block;
-    filter: drop-shadow(0 1px 1.5px rgba(11, 42, 92, .3));
-  }
-  .brand-text { min-width: 0; }
 
-  .branch {
+  /* ---------- 네비게이션 바 (iOS Large Title) ---------- */
+  .navbar {
+    flex: none;
+    position: relative;
+    z-index: 20;
+    height: 44px;
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    padding: 0 12px;
+    background: var(--bg-nav);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: .5px solid transparent;
+    transition: border-color .25s ease;
+  }
+  .navbar.is-stuck { border-bottom-color: var(--separator); }
+
+  .nav-logo { width: 26px; height: 30px; display: block; }
+
+  .nav-title {
+    text-align: center;
+    font-size: 17px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity .25s ease, transform .25s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .navbar.is-stuck .nav-title { opacity: 1; transform: none; }
+
+  .nav-btn {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    color: var(--blue);
+    position: relative;
+    justify-self: end;
+    margin-right: -6px;
+  }
+  .nav-btn .dot {
+    position: absolute;
+    top: 9px; right: 9px;
+    min-width: 16px; height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--red);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+    letter-spacing: 0;
+  }
+
+  /* ---------- Large Title 영역 ---------- */
+  .scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 0 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .large-head { padding: 6px 0 4px; }
+
+  .large-title {
     display: flex;
     align-items: center;
     gap: 6px;
     padding: 0;
-    font-size: 17px;
+    font-size: 28px;      /* iOS Title 1 */
     font-weight: 700;
-    letter-spacing: -.025em;
+    max-width: 100%;
   }
-  .branch svg { color: var(--ink-3); flex: none; }
+  .large-title span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .large-title svg { color: var(--gray); flex: none; margin-top: 3px; }
 
-  .shift {
-    margin-top: 1px;
-    font-size: 12px;
-    color: var(--ink-3);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .shift .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); }
-
-  .bell {
-    position: relative;
-    width: 40px;
-    height: 40px;
-    display: grid;
-    place-items: center;
-    border-radius: 12px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    color: var(--ink-2);
-    flex: none;
-  }
-  .bell .badge {
-    position: absolute;
-    top: 7px; right: 7px;
-    min-width: 15px; height: 15px;
-    padding: 0 4px;
-    border-radius: 999px;
-    background: var(--st-lost);
-    color: #fff;
-    font-family: var(--mono);
-    font-size: 9px;
-    font-weight: 700;
-    line-height: 15px;
-    text-align: center;
-    border: 2px solid var(--surface);
-    box-sizing: content-box;
+  .large-sub {
+    margin-top: 2px;
+    font-size: 15px;      /* iOS Subhead */
+    color: var(--label-2);
   }
 
-  /* ---------- 섹션 헤더 ---------- */
+  /* ---------- 섹션 ---------- */
   .sec-head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 11px;
+    margin-bottom: 10px;
   }
   .sec-title {
-    font-size: 16px;
+    font-size: 20px;      /* iOS Title 3 */
     font-weight: 700;
-    letter-spacing: -.03em;
   }
   .sec-link {
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--ink-3);
+    padding: 0;
     display: flex;
     align-items: center;
     gap: 2px;
-    padding: 0;
+    font-size: 15px;
+    color: var(--blue);
     flex: none;
   }
+  .sec-link:active { opacity: .4; }
 
   /* ============================================================
-     키 관리 — 남/여 현황 카드
+     키 현황 카드
      ============================================================ */
   .key-cards {
     display: grid;
@@ -296,276 +356,378 @@
   }
 
   .key-card {
-    background: color-mix(in srgb, var(--c) 7%, var(--surface));
-    border: 1px solid color-mix(in srgb, var(--c) 20%, var(--line));
+    background: var(--bg-cell);
     border-radius: var(--r-card);
-    padding: 15px 14px 13px;
+    padding: 14px 14px 12px;
     text-align: left;
-    box-shadow: var(--shadow-1);
-    transition: transform .16s ease;
+    transition: opacity .15s ease;
   }
-  .key-card:active { transform: scale(.985); }
+  .key-card:active { opacity: .6; }
 
-  .key-card .who {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: -.03em;
+  .card-who {
+    font-size: 17px;      /* iOS Headline */
+    font-weight: 600;
     color: var(--c);
   }
-  .key-card .range {
-    margin-top: 2px;
-    font-family: var(--mono);
-    font-variant-numeric: tabular-nums;
-    font-size: 12.5px;
-    color: var(--ink-2);
-    letter-spacing: -.01em;
+  .card-range {
+    font-size: 15px;
+    color: var(--label-2);
   }
-  .key-card .total {
-    margin-top: 4px;
+  .card-total {
+    margin-top: 2px;
     display: flex;
     align-items: baseline;
     gap: 2px;
   }
-  .key-card .total .n {
-    font-family: var(--mono);
-    font-variant-numeric: tabular-nums;
-    font-size: 30px;
+  .card-total .num {
+    font-size: 32px;
     font-weight: 700;
-    letter-spacing: -.045em;
-    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
   }
-  .key-card .total .u { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  .card-total .unit {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--label-2);
+  }
 
   .breakdown {
-    margin-top: 12px;
-    padding-top: 11px;
-    border-top: 1px solid color-mix(in srgb, var(--c) 18%, var(--line));
+    margin-top: 11px;
+    padding-top: 10px;
+    border-top: .5px solid var(--separator);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 7px;
   }
   .breakdown li {
     display: flex;
     align-items: center;
     gap: 7px;
-    font-size: 12.5px;
+    font-size: 15px;
+    line-height: 1.3;
   }
   .breakdown i {
-    width: 7px; height: 7px;
+    width: 8px; height: 8px;
     border-radius: 50%;
     background: var(--d);
     flex: none;
   }
-  .breakdown .l { color: var(--ink-2); flex: 1; letter-spacing: -.02em; }
-  .breakdown .v {
-    font-family: var(--mono);
-    font-variant-numeric: tabular-nums;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: -.02em;
-  }
+  .breakdown .l { color: var(--label-2); flex: 1; }
+  .breakdown .v { font-weight: 600; font-variant-numeric: tabular-nums; }
 
-  /* 키 현황 등록 버튼 */
-  .btn-register {
+  /* ---------- iOS 채움 버튼 ---------- */
+  .btn-filled {
     margin-top: 10px;
     width: 100%;
-    height: 50px;
+    min-height: 50px;
     border-radius: var(--r-card);
-    background: var(--accent);
-    color: var(--on-accent);
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: -.03em;
+    background: var(--blue);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    box-shadow: var(--shadow-1);
-    transition: transform .16s ease, opacity .16s ease;
+    gap: 6px;
+    transition: opacity .15s ease;
   }
-  .btn-register:active { transform: scale(.985); opacity: .92; }
+  .btn-filled:active { opacity: .7; }
+
+  /* ---------- 전체 합계 ---------- */
+  .total-cell .cell-title { font-weight: 600; }
+  .total-value { font-size: 17px; font-weight: 600; }
+  .cell + .stats { border-top: .5px solid var(--separator); }
+  .stats-4 { grid-template-columns: repeat(4, 1fr); }
+  .stats-4 .stat-num { font-size: 22px; }
+
+  /* ---------- 빈 상태 ---------- */
+  .empty {
+    padding: 26px 20px;
+    text-align: center;
+    font-size: 15px;
+    color: var(--label-2);
+  }
 
   /* ============================================================
-     공용 패널 (인수인계 · 분실물 · 특이사항)
+     등록 시트 (iOS Sheet)
      ============================================================ */
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--r-card);
-    overflow: hidden;
-    box-shadow: var(--shadow-1);
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, .4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .35s ease;
+    z-index: 70;
+  }
+  .scrim.is-open { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    max-height: 92%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-grouped);
+    border-radius: 14px 14px 0 0;
+    transform: translateY(101%);
+    transition: transform .42s cubic-bezier(.32, .72, 0, 1);
+    z-index: 80;
+  }
+  .sheet.is-open { transform: none; }
+
+  .sheet-bar {
+    flex: none;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px 10px;
+  }
+  .sheet-bar .title { font-size: 17px; font-weight: 600; }
+  .sheet-bar .act {
+    font-size: 17px;
+    color: var(--blue);
+    padding: 0;
+    background: none;
+  }
+  .sheet-bar .act.right { text-align: right; font-weight: 600; }
+  .sheet-bar .act:disabled { color: var(--label-3); }
+  .sheet-bar .act:not(:disabled):active { opacity: .4; }
+
+  .sheet-body {
+    overflow-y: auto;
+    padding: 6px 16px calc(20px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
   }
 
-  /* 3칸 숫자 스트립 */
+  .field-label {
+    font-size: 13px;
+    color: var(--label-2);
+    padding: 0 4px 6px;
+  }
+
+  /* iOS 세그먼티드 컨트롤 */
+  .segmented {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 9px;
+    background: rgba(118, 118, 128, .12);
+  }
+  .segmented button {
+    height: 32px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--label);
+    transition: background-color .2s ease;
+  }
+  .segmented button[aria-pressed="true"] {
+    background: var(--bg-cell);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04);
+  }
+
+  /* 번호 입력 */
+  .num-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-cell);
+    border-radius: var(--r-card);
+    padding: 0 16px;
+    min-height: 50px;
+  }
+  .num-field input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    letter-spacing: inherit;
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+    color: var(--label);
+    padding: 13px 0;
+    outline: none;
+  }
+  .num-field input::placeholder { color: var(--label-3); }
+  .num-field .hint { font-size: 15px; color: var(--label-2); flex: none; }
+
+  .field-error {
+    font-size: 13px;
+    color: var(--red);
+    padding: 6px 4px 0;
+    display: none;
+  }
+  .field-error.is-on { display: block; }
+
+  /* 상태 선택 */
+  .pick .cell { cursor: pointer; }
+  .pick .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--c);
+    flex: none;
+  }
+  .pick .check { color: var(--blue); flex: none; opacity: 0; }
+  .pick .cell[aria-pressed="true"] .check { opacity: 1; }
+
+  /* ============================================================
+     Inset Grouped 리스트
+     ============================================================ */
+  .group {
+    background: var(--bg-cell);
+    border-radius: var(--r-card);
+    overflow: hidden;
+  }
+
+  .cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 16px;
+    text-align: left;
+    transition: background-color .15s ease;
+  }
+  .cell + .cell::before {
+    content: "";
+    position: absolute;
+    left: 16px; right: 0; top: 0;
+    height: .5px;
+    background: var(--separator);
+  }
+  .cell.has-icon + .cell.has-icon::before { left: 51px; }
+  button.cell:active { background: var(--fill-4); }
+
+  .cell-ico { width: 27px; display: grid; place-items: center; flex: none; color: var(--c, var(--gray)); }
+
+  .cell-body { flex: 1; min-width: 0; }
+  .cell-title {
+    font-size: 17px;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cell-sub {
+    font-size: 13px;      /* iOS Footnote */
+    color: var(--label-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cell-value {
+    font-size: 17px;
+    color: var(--label-2);
+    flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .cell-value.accent { color: var(--orange); font-weight: 600; }
+
+  .cell-badge {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    flex: none;
+    color: var(--label-2);
+    background: var(--fill-4);
+  }
+  .cell-badge.done { color: var(--green); background: color-mix(in srgb, var(--green) 15%, transparent); }
+
+  .chev { color: var(--gray-3); flex: none; }
+
+  /* ---------- 3칸 통계 ---------- */
   .stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    border-bottom: 1px solid var(--line);
+    position: relative;
   }
   .stat {
     padding: 14px 6px 13px;
     text-align: center;
-    border-right: 1px solid var(--line);
+    position: relative;
   }
-  .stat:last-child { border-right: 0; }
-  .stat .n {
-    font-family: var(--mono);
+  .stat + .stat::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 12px; bottom: 12px;
+    width: .5px;
+    background: var(--separator);
+  }
+  .stat-num {
+    font-size: 26px;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
-    font-size: 23px;
-    font-weight: 700;
-    letter-spacing: -.045em;
-    line-height: 1.1;
-    color: var(--c, var(--ink));
+    color: var(--c, var(--label));
   }
-  .stat .l {
-    margin-top: 3px;
-    font-size: 11.5px;
-    color: var(--ink-3);
-    letter-spacing: -.02em;
+  .stat-label {
+    font-size: 13px;
+    color: var(--label-2);
+    line-height: 1.3;
   }
-
-  /* 인수인계 단계 */
-  .steps { display: flex; flex-direction: column; }
-  .step {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    padding: 13px 15px;
-    border-bottom: 1px solid var(--line);
+  .stats + .cell::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: .5px;
+    background: var(--separator);
   }
-  .step .mark {
-    width: 26px; height: 26px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    flex: none;
-    border: 1.5px solid var(--line-2);
-    color: var(--ink-3);
-  }
-  .step.is-done .mark {
-    background: var(--st-ok);
-    border-color: var(--st-ok);
-    color: #fff;
-  }
-  .step .label {
-    font-size: 13.5px;
-    font-weight: 650;
-    letter-spacing: -.03em;
-    flex: none;
-    width: 34px;
-  }
-  .step .desc {
-    flex: 1;
-    font-size: 12.5px;
-    color: var(--ink-2);
-    letter-spacing: -.02em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .step .state {
-    font-size: 11.5px;
-    font-weight: 700;
-    letter-spacing: -.02em;
-    padding: 3px 9px;
-    border-radius: var(--r-chip);
-    flex: none;
-    color: var(--ink-3);
-    background: var(--surface-3);
-  }
-  .step.is-done .state {
-    color: var(--st-ok);
-    background: color-mix(in srgb, var(--st-ok) 13%, transparent);
-  }
-
-  /* 패널 안 목록 행 */
-  .row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    text-align: left;
-    padding: 13px 15px;
-    border-bottom: 1px solid var(--line);
-    transition: background-color .16s ease;
-  }
-  .row:last-child { border-bottom: 0; }
-  .row:active { background: var(--surface-2); }
-
-  .row .body { flex: 1; min-width: 0; }
-  .row .t {
-    font-size: 13.5px;
-    font-weight: 650;
-    letter-spacing: -.03em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .row .s {
-    margin-top: 2px;
-    font-size: 11.5px;
-    color: var(--ink-3);
-    letter-spacing: -.02em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .row .n {
-    font-family: var(--mono);
-    font-variant-numeric: tabular-nums;
-    font-size: 13.5px;
-    font-weight: 700;
-    letter-spacing: -.02em;
-    flex: none;
-  }
-  .row .chev { color: var(--ink-3); flex: none; }
 
   /* ============================================================
-     하단 탭바
+     탭바 (iOS)
      ============================================================ */
   .tabbar {
-    position: sticky;
-    bottom: 0;
+    flex: none;
+    position: relative;
     z-index: 30;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    align-items: stretch;
-    gap: 2px;
-    padding: 7px 8px calc(9px + env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--surface) 92%, transparent);
-    -webkit-backdrop-filter: saturate(160%) blur(16px);
-    backdrop-filter: saturate(160%) blur(16px);
-    box-shadow: var(--shadow-tab);
+    padding-bottom: 20px;   /* 홈 인디케이터 영역 */
+    background: var(--bg-nav);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-top: .5px solid var(--separator);
   }
 
   .tab {
+    height: 49px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 4px 0 3px;
-    color: var(--ink-3);
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: -.02em;
-    border-radius: 12px;
-    transition: color .16s ease;
+    justify-content: center;
+    gap: 2px;
+    padding: 0;
+    color: var(--gray);
+    font-size: 10px;
+    font-weight: 500;
+    transition: color .15s ease;
   }
-  .tab[aria-current="page"] { color: var(--ink); font-weight: 700; }
-  .tab:active .tab-ico { transform: scale(.92); }
+  .tab[aria-current="page"] { color: var(--blue); }
+  .tab:active { opacity: .6; }
 
-  .tab-ico {
-    width: 52px;
-    height: 30px;
-    display: grid;
-    place-items: center;
-    border-radius: var(--r-chip);
-    transition: background-color .18s ease, transform .16s ease;
+  /* 홈 인디케이터 */
+  .home-bar {
+    position: absolute;
+    bottom: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 140px; height: 5px;
+    border-radius: 999px;
+    background: var(--label);
+    opacity: .85;
+    z-index: 60;
+    pointer-events: none;
   }
-  .tab[aria-current="page"] .tab-ico { background: var(--surface-3); }
 
   /* ---------- 등장 모션 ---------- */
-  .rise { opacity: 0; transform: translateY(10px); animation: rise .5s cubic-bezier(.2, .8, .25, 1) forwards; }
+  .rise { opacity: 0; transform: translateY(8px); animation: rise .45s cubic-bezier(.32, .72, 0, 1) forwards; }
   @keyframes rise { to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
@@ -573,95 +735,158 @@
     .rise { opacity: 1; transform: none; }
   }
 
-  @media (min-width: 520px) {
-    .app { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+  /* ============================================================
+     실제 모바일 기기 — 프레임 없이 전체화면으로
+     ============================================================ */
+  @media (max-width: 520px) {
+    body { display: block; }
+
+    .device {
+      padding: 0;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+    }
+
+    .screen {
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      border-radius: 0;
+    }
+
+    /* 기기가 진짜 상태 표시줄과 홈 인디케이터를 그리므로 가짜는 숨긴다 */
+    .island,
+    .statusbar,
+    .home-bar { display: none; }
+
+    .app { padding-top: env(safe-area-inset-top); }
+    .tabbar { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
   }
 </style>
 
-<div class="app">
+<div class="device">
+ <div class="screen">
 
-  <!-- ============ 헤더 ============ -->
-  <header class="topbar" id="topbar">
-    <div class="brand">
-      <!-- BK 방패 심볼 — 헤더 크기에서 읽히도록 단순화한 버전 -->
-      <svg class="logo" viewBox="0 0 40 47" role="img" aria-label="바이칼 휘트니스">
-        <defs>
-          <linearGradient id="bk-rim" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#F2F5F8"/>
-            <stop offset=".45" stop-color="#B9C4CF"/>
-            <stop offset="1" stop-color="#8B99A8"/>
-          </linearGradient>
-          <linearGradient id="bk-face" x1=".15" y1="0" x2=".85" y2="1">
-            <stop offset="0" stop-color="#2E86E0"/>
-            <stop offset=".5" stop-color="#1257B4"/>
-            <stop offset="1" stop-color="#0A2E72"/>
-          </linearGradient>
-        </defs>
-        <path fill="url(#bk-rim)" d="M6 3h28a3 3 0 0 1 3 3v18c0 9-7 15-17 20C10 39 3 33 3 24V6a3 3 0 0 1 3-3z"/>
-        <path fill="url(#bk-face)" d="M8 5.5h24a2.5 2.5 0 0 1 2.5 2.5v16c0 7.7-6 12.9-14.5 17.2C11.5 36.9 5.5 31.7 5.5 24V8a2.5 2.5 0 0 1 2.5-2.5z"/>
-        <text x="20" y="27" text-anchor="middle" fill="#fff"
-              font-family="-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif"
-              font-size="16.5" font-weight="800" letter-spacing="-.5">BK</text>
-      </svg>
+  <div class="island" aria-hidden="true"></div>
 
-      <div class="brand-text">
-        <button class="branch" type="button">
-          바이칼 휘트니스 서현점
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <div class="shift">
-          <span class="mono">08.15 금</span>
-          <span class="dot"></span>
-          <span>오픈 근무 · 김민재</span>
-        </div>
-      </div>
-    </div>
-    <button class="bell" type="button" aria-label="알림 3건">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
-      <span class="badge mono">3</span>
+  <!-- ============ 상태 표시줄 ============ -->
+  <div class="statusbar" aria-hidden="true">
+    <span>9:41</span>
+    <span class="icons">
+      <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 11.6 6.2 9.1a3.4 3.4 0 0 1 4.6 0zM3.6 6.4 2 4.7a9.7 9.7 0 0 1 13 0l-1.6 1.7a7.4 7.4 0 0 0-9.8 0z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" stroke="currentColor" stroke-opacity=".4" stroke-width="1.1"/><rect x="2.3" y="2.3" width="15" height="7.4" rx="2" fill="currentColor"/><path d="M23.2 4.2v3.6a2 2 0 0 0 0-3.6z" fill="currentColor" fill-opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="app">
+
+  <!-- ============ 네비게이션 바 ============ -->
+  <header class="navbar" id="navbar">
+    <svg class="nav-logo" viewBox="0 0 40 47" role="img" aria-label="바이칼 휘트니스">
+      <defs>
+        <linearGradient id="bk-rim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#F2F5F8"/>
+          <stop offset=".45" stop-color="#B9C4CF"/>
+          <stop offset="1" stop-color="#8B99A8"/>
+        </linearGradient>
+        <linearGradient id="bk-face" x1=".15" y1="0" x2=".85" y2="1">
+          <stop offset="0" stop-color="#2E86E0"/>
+          <stop offset=".5" stop-color="#1257B4"/>
+          <stop offset="1" stop-color="#0A2E72"/>
+        </linearGradient>
+      </defs>
+      <path fill="url(#bk-rim)" d="M6 3h28a3 3 0 0 1 3 3v18c0 9-7 15-17 20C10 39 3 33 3 24V6a3 3 0 0 1 3-3z"/>
+      <path fill="url(#bk-face)" d="M8 5.5h24a2.5 2.5 0 0 1 2.5 2.5v16c0 7.7-6 12.9-14.5 17.2C11.5 36.9 5.5 31.7 5.5 24V8a2.5 2.5 0 0 1 2.5-2.5z"/>
+      <text x="20" y="27" text-anchor="middle" fill="#fff"
+            font-family="-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif"
+            font-size="16.5" font-weight="800" letter-spacing="-.5">BK</text>
+    </svg>
+
+    <span class="nav-title" id="navTitle">서현점</span>
+
+    <button class="nav-btn" type="button" aria-label="알림 3건">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 20.5a1.9 1.9 0 0 0 3.4 0"/><path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-3 8.5-3 8.5h18s-3-2-3-8.5"/></svg>
+      <span class="dot tnum">3</span>
     </button>
   </header>
 
-  <div class="scroll">
+  <main class="scroll">
 
-    <!-- ============ 키 관리 현황 ============ -->
+    <!-- ============ Large Title ============ -->
+    <div class="large-head" id="largeHead">
+      <button class="large-title" type="button">
+        <span>바이칼 휘트니스 서현점</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <p class="large-sub">8월 15일 금요일 · 오픈 근무 · 김민재</p>
+    </div>
+
+    <!-- ============ 전체 키 현황 ============ -->
     <section class="rise" style="animation-delay:.02s" aria-labelledby="key-t">
       <div class="sec-head">
         <h2 class="sec-title" id="key-t">전체 키 현황</h2>
         <button class="sec-link" type="button">
           상세 보기
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
         </button>
+      </div>
+
+      <!-- 전체 합계 — 남녀 카드에서 계산되어 나온다 -->
+      <div class="group" style="margin-bottom:10px">
+        <div class="cell total-cell">
+          <span class="cell-body"><span class="cell-title">전체 키</span></span>
+          <span class="total-value tnum"><span id="tAll">407</span>개</span>
+        </div>
+        <div class="stats stats-4">
+          <div class="stat" style="--c:var(--st-ok)">
+            <p class="stat-num tnum" id="tOk">407</p>
+            <p class="stat-label">정상</p>
+          </div>
+          <div class="stat" style="--c:var(--st-lost)">
+            <p class="stat-num tnum" id="tLost">0</p>
+            <p class="stat-label">분실</p>
+          </div>
+          <div class="stat" style="--c:var(--st-broken)">
+            <p class="stat-num tnum" id="tBroken">0</p>
+            <p class="stat-label">고장</p>
+          </div>
+          <div class="stat" style="--c:var(--st-etc)">
+            <p class="stat-num tnum" id="tEtc">0</p>
+            <p class="stat-label">기타</p>
+          </div>
+        </div>
       </div>
 
       <div class="key-cards">
         <button class="key-card" type="button" style="--c:var(--male)">
-          <span class="who">남자 키</span>
-          <p class="range">001 – 200</p>
-          <p class="total"><span class="n">200</span><span class="u">개</span></p>
+          <span class="card-who">남자 키</span>
+          <p class="card-range tnum">001 – 200</p>
+          <p class="card-total"><span class="num tnum">200</span><span class="unit">개</span></p>
           <ul class="breakdown">
-            <li style="--d:var(--st-ok)"><i></i><span class="l">정상</span><span class="v">186</span></li>
-            <li style="--d:var(--st-lost)"><i></i><span class="l">분실</span><span class="v">4</span></li>
-            <li style="--d:var(--st-broken)"><i></i><span class="l">고장</span><span class="v">6</span></li>
-            <li style="--d:var(--st-etc)"><i></i><span class="l">기타</span><span class="v">4</span></li>
+            <li style="--d:var(--st-ok)"><i></i><span class="l">정상</span><span class="v tnum" id="mOk">200</span></li>
+            <li style="--d:var(--st-lost)"><i></i><span class="l">분실</span><span class="v tnum" id="mLost">0</span></li>
+            <li style="--d:var(--st-broken)"><i></i><span class="l">고장</span><span class="v tnum" id="mBroken">0</span></li>
+            <li style="--d:var(--st-etc)"><i></i><span class="l">기타</span><span class="v tnum" id="mEtc">0</span></li>
           </ul>
         </button>
 
         <button class="key-card" type="button" style="--c:var(--female)">
-          <span class="who">여자 키</span>
-          <p class="range">001 – 200</p>
-          <p class="total"><span class="n">200</span><span class="u">개</span></p>
+          <span class="card-who">여자 키</span>
+          <p class="card-range tnum">001 – 207</p>
+          <p class="card-total"><span class="num tnum">207</span><span class="unit">개</span></p>
           <ul class="breakdown">
-            <li style="--d:var(--st-ok)"><i></i><span class="l">정상</span><span class="v">189</span></li>
-            <li style="--d:var(--st-lost)"><i></i><span class="l">분실</span><span class="v">3</span></li>
-            <li style="--d:var(--st-broken)"><i></i><span class="l">고장</span><span class="v">5</span></li>
-            <li style="--d:var(--st-etc)"><i></i><span class="l">기타</span><span class="v">3</span></li>
+            <li style="--d:var(--st-ok)"><i></i><span class="l">정상</span><span class="v tnum" id="fOk">207</span></li>
+            <li style="--d:var(--st-lost)"><i></i><span class="l">분실</span><span class="v tnum" id="fLost">0</span></li>
+            <li style="--d:var(--st-broken)"><i></i><span class="l">고장</span><span class="v tnum" id="fBroken">0</span></li>
+            <li style="--d:var(--st-etc)"><i></i><span class="l">기타</span><span class="v tnum" id="fEtc">0</span></li>
           </ul>
         </button>
       </div>
 
-      <button class="btn-register" type="button">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <button class="btn-filled" type="button" id="openSheet">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>
         키 현황 등록
       </button>
     </section>
@@ -672,37 +897,40 @@
         <h2 class="sec-title" id="ho-t">인수인계 현황</h2>
         <button class="sec-link" type="button">
           상세 보기
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </div>
 
-      <div class="panel">
-        <div class="steps">
-          <div class="step is-done">
-            <span class="mark">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
-            </span>
-            <span class="label">인수</span>
-            <span class="desc">09:00 · 박지영 → 나</span>
-            <span class="state">완료</span>
-          </div>
-          <div class="step">
-            <span class="mark">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
-            </span>
-            <span class="label">인계</span>
-            <span class="desc">18:00 예정 · 최유리</span>
-            <span class="state">대기</span>
-          </div>
+      <div class="group">
+        <div class="cell has-icon" style="--c:var(--green)">
+          <span class="cell-ico">
+            <svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="m7.6 12.3 3 3 5.8-6.4" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="cell-body">
+            <span class="cell-title">인수</span>
+            <span class="cell-sub">09:00 · 박지영 → 나</span>
+          </span>
+          <span class="cell-badge done">완료</span>
         </div>
 
-        <button class="row" type="button">
-          <span class="body">
-            <span class="t">아직 확인하지 않은 전달사항</span>
-            <span class="s">박지영이 오전에 남김</span>
+        <div class="cell has-icon" style="--c:var(--gray)">
+          <span class="cell-ico">
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.3"/><path d="M12 6.8V12l3.4 2"/></svg>
           </span>
-          <span class="n" style="color:var(--st-broken)">2건</span>
-          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          <span class="cell-body">
+            <span class="cell-title">인계</span>
+            <span class="cell-sub">18:00 예정 · 최유리</span>
+          </span>
+          <span class="cell-badge">대기</span>
+        </div>
+
+        <button class="cell" type="button">
+          <span class="cell-body">
+            <span class="cell-title">확인하지 않은 전달사항</span>
+            <span class="cell-sub">박지영이 오전에 남김</span>
+          </span>
+          <span class="cell-value accent">2건</span>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </div>
     </section>
@@ -713,40 +941,40 @@
         <h2 class="sec-title" id="lost-t">분실물 현황</h2>
         <button class="sec-link" type="button">
           상세 보기
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </div>
 
-      <div class="panel">
+      <div class="group">
         <div class="stats">
           <div class="stat">
-            <p class="n">14</p>
-            <p class="l">보관 중</p>
+            <p class="stat-num">14</p>
+            <p class="stat-label">보관 중</p>
           </div>
-          <div class="stat" style="--c:var(--st-etc)">
-            <p class="n">2</p>
-            <p class="l">오늘 접수</p>
+          <div class="stat" style="--c:var(--blue)">
+            <p class="stat-num">2</p>
+            <p class="stat-label">오늘 접수</p>
           </div>
-          <div class="stat" style="--c:var(--st-broken)">
-            <p class="n">3</p>
-            <p class="l">보관 만료 임박</p>
+          <div class="stat" style="--c:var(--orange)">
+            <p class="stat-num">3</p>
+            <p class="stat-label">보관 만료 임박</p>
           </div>
         </div>
 
-        <button class="row" type="button">
-          <span class="body">
-            <span class="t">에어팟 프로 (흰색 케이스)</span>
-            <span class="s">2층 러닝머신 구역 · 40분 전 접수</span>
+        <button class="cell" type="button">
+          <span class="cell-body">
+            <span class="cell-title">에어팟 프로 (흰색 케이스)</span>
+            <span class="cell-sub">2층 러닝머신 구역 · 40분 전 접수</span>
           </span>
-          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
         </button>
 
-        <button class="row" type="button">
-          <span class="body">
-            <span class="t">검정 후드집업 (L)</span>
-            <span class="s">남자 샤워실 · 어제 접수</span>
+        <button class="cell" type="button">
+          <span class="cell-body">
+            <span class="cell-title">검정 후드집업 (L)</span>
+            <span class="cell-sub">남자 샤워실 · 어제 접수</span>
           </span>
-          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </div>
     </section>
@@ -755,79 +983,117 @@
     <section class="rise" style="animation-delay:.2s" aria-labelledby="log-t">
       <div class="sec-head">
         <h2 class="sec-title" id="log-t">최근 특이사항</h2>
-        <span class="eyebrow">오늘</span>
       </div>
 
-      <div class="panel">
-        <button class="row" type="button">
-          <span class="body">
-            <span class="t">남자 012번 키 고장 등록 (손잡이 파손)</span>
-            <span class="s">김인수 · 10분 전</span>
-          </span>
-          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-
-        <button class="row" type="button">
-          <span class="body">
-            <span class="t">여자 105번 키 회원 연락 완료</span>
-            <span class="s">박지영 · 1시간 전</span>
-          </span>
-          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-
-        <button class="row" type="button">
-          <span class="body">
-            <span class="t">분실물 3건 보관 만료 예정 (8/18)</span>
-            <span class="s">자동 알림 · 2시간 전</span>
-          </span>
-          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
+      <div class="group" id="logGroup">
+        <p class="empty">아직 등록된 변경이 없습니다<br>모든 키가 정상 상태입니다</p>
       </div>
     </section>
 
-  </div>
+  </main>
 
-  <!-- ============ 하단 탭바 ============ -->
+  <!-- ============ 탭바 ============ -->
   <nav class="tabbar" aria-label="주요 메뉴">
     <button class="tab" type="button" aria-current="page">
-      <span class="tab-ico">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M9.5 21v-6.5h5V21"/></svg>
-      </span>
+      <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M9.5 21v-6.5h5V21"/></svg>
       홈
     </button>
     <button class="tab" type="button">
-      <span class="tab-ico">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="4.5"/><path d="m11.7 11.7 8.3 8.3"/><path d="m15.4 15.4 2-2"/><path d="m17.7 17.7 2-2"/></svg>
-      </span>
+      <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="4.5"/><path d="m11.7 11.7 8.3 8.3"/><path d="m15.4 15.4 2-2"/><path d="m17.7 17.7 2-2"/></svg>
       키 관리
     </button>
     <button class="tab" type="button">
-      <span class="tab-ico">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5h13"/><path d="M13.5 5 17 8.5 13.5 12"/><path d="M20 15.5H7"/><path d="M10.5 12 7 15.5l3.5 3.5"/></svg>
-      </span>
+      <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5h13"/><path d="M13.5 5 17 8.5 13.5 12"/><path d="M20 15.5H7"/><path d="M10.5 12 7 15.5l3.5 3.5"/></svg>
       인수인계
     </button>
     <button class="tab" type="button">
-      <span class="tab-ico">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="4.5" rx="1.5"/><path d="M4.8 8.5v9.7a2 2 0 0 0 2 2h10.4a2 2 0 0 0 2-2V8.5"/><path d="M10 12.5h4"/></svg>
-      </span>
+      <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="4.5" rx="1.5"/><path d="M4.8 8.5v9.7a2 2 0 0 0 2 2h10.4a2 2 0 0 0 2-2V8.5"/><path d="M10 12.5h4"/></svg>
       분실물
     </button>
   </nav>
 
-</div>
+  </div><!-- /.app -->
+
+  <!-- ============ 키 현황 등록 시트 ============ -->
+  <div class="scrim" id="scrim"></div>
+
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-bar">
+      <button class="act" type="button" id="cancelBtn">취소</button>
+      <span class="title" id="sheetTitle">키 현황 등록</span>
+      <button class="act right" type="button" id="saveBtn" disabled>저장</button>
+    </div>
+
+    <div class="sheet-body">
+      <div>
+        <p class="field-label">구분</p>
+        <div class="segmented" id="genderSeg">
+          <button type="button" data-g="m" aria-pressed="true">남자 키</button>
+          <button type="button" data-g="f" aria-pressed="false">여자 키</button>
+        </div>
+      </div>
+
+      <div>
+        <p class="field-label">키 번호</p>
+        <div class="num-field">
+          <input id="noInput" type="text" inputmode="numeric" autocomplete="off"
+                 placeholder="번호 입력" aria-label="키 번호">
+          <span class="hint" id="rangeHint">1 – 200</span>
+        </div>
+        <p class="field-error" id="noError"></p>
+      </div>
+
+      <div>
+        <p class="field-label">상태</p>
+        <div class="group pick" id="statusPick">
+          <button class="cell" type="button" data-s="ok" aria-pressed="false" style="--c:var(--st-ok)">
+            <span class="dot"></span>
+            <span class="cell-body"><span class="cell-title">정상</span></span>
+            <svg class="check" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          </button>
+          <button class="cell" type="button" data-s="lost" aria-pressed="false" style="--c:var(--st-lost)">
+            <span class="dot"></span>
+            <span class="cell-body"><span class="cell-title">분실</span></span>
+            <svg class="check" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          </button>
+          <button class="cell" type="button" data-s="broken" aria-pressed="false" style="--c:var(--st-broken)">
+            <span class="dot"></span>
+            <span class="cell-body"><span class="cell-title">고장</span></span>
+            <svg class="check" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          </button>
+          <button class="cell" type="button" data-s="etc" aria-pressed="false" style="--c:var(--st-etc)">
+            <span class="dot"></span>
+            <span class="cell-body"><span class="cell-title">기타</span></span>
+            <svg class="check" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-bar" aria-hidden="true"></div>
+ </div><!-- /.screen -->
+</div><!-- /.device -->
 
 <script>
   (function () {
     'use strict';
 
-    /* 헤더 구분선: 스크롤 시작하면 나타난다 */
-    var topbar = document.getElementById('topbar');
-    window.addEventListener('scroll', function () {
-      topbar.classList.toggle('is-stuck', window.scrollY > 4);
-    }, { passive: true });
+    /* iOS Large Title: 큰 제목이 네비바 아래로 지나가면 컴팩트 제목으로 전환 */
+    var navbar = document.getElementById('navbar');
+    var largeHead = document.getElementById('largeHead');
+    var scroller = document.querySelector('.scroll');
 
-    /* 탭바 선택 상태 */
+    function sync() {
+      var passed = largeHead.getBoundingClientRect().bottom
+                 <= navbar.getBoundingClientRect().bottom;
+      navbar.classList.toggle('is-stuck', passed);
+    }
+    scroller.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync);
+    sync();
+
+    /* 탭 선택 */
     var tabs = document.querySelectorAll('.tab');
     tabs.forEach(function (tab) {
       tab.addEventListener('click', function () {
