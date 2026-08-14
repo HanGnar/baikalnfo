@@ -528,6 +528,46 @@
     color: var(--label-2);
     padding: 0 4px 6px;
   }
+  .field-label .optional {
+    margin-left: 5px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--fill-4);
+    font-size: 11px;
+    color: var(--label-3);
+    letter-spacing: 0;
+  }
+
+  /* 메모 (선택 입력) */
+  .memo-field {
+    background: var(--bg-cell);
+    border-radius: var(--r-card);
+    padding: 11px 16px 9px;
+  }
+  .memo-field textarea {
+    display: block;
+    width: 100%;
+    min-height: 62px;
+    border: 0;
+    padding: 0;
+    background: none;
+    font: inherit;
+    letter-spacing: inherit;
+    font-size: 17px;
+    line-height: var(--lh-body);
+    color: var(--label);
+    resize: none;
+    outline: none;
+  }
+  .memo-field textarea::placeholder { color: var(--label-3); }
+
+  .memo-count {
+    padding: 5px 4px 0;
+    text-align: right;
+    font-size: 12px;
+    color: var(--label-3);
+    font-variant-numeric: tabular-nums;
+  }
 
   /* iOS 세그먼티드 컨트롤 */
   .segmented {
@@ -1036,6 +1076,16 @@
           </button>
         </div>
       </div>
+
+      <div>
+        <p class="field-label">메모<span class="optional">선택</span></p>
+        <div class="memo-field">
+          <textarea id="memoInput" rows="2" maxlength="100"
+                    placeholder="예) 손잡이 파손 · 회원이 내일 반납 예정"
+                    aria-label="메모 (선택 입력)"></textarea>
+        </div>
+        <p class="memo-count"><span id="memoCount">0</span> / 100</p>
+      </div>
     </div>
 
     <div class="sheet-foot">
@@ -1107,6 +1157,13 @@
       }
     } catch (e) { /* 저장소를 못 쓰면 이번 세션에서만 동작 */ }
 
+    /* 메모가 생기기 전에는 상태를 문자열로 저장했다 — 객체 형태로 맞춰준다 */
+    ['m', 'f'].forEach(function (g) {
+      Object.keys(data[g]).forEach(function (no) {
+        if (typeof data[g][no] === 'string') data[g][no] = { s: data[g][no], memo: '' };
+      });
+    });
+
     function persist() {
       try { localStorage.setItem(STORE, JSON.stringify(data)); } catch (e) {}
     }
@@ -1115,10 +1172,17 @@
       var c = { ok: 0, lost: 0, broken: 0, etc: 0 };
       var ex = data[g], n = 0;
       for (var no in ex) {
-        if (Object.prototype.hasOwnProperty.call(ex, no)) { c[ex[no]]++; n++; }
+        if (Object.prototype.hasOwnProperty.call(ex, no)) { c[ex[no].s]++; n++; }
       }
       c.ok = TOTAL[g] - n;
       return c;
+    }
+
+    /* 메모는 사용자가 직접 쓰는 값이라 화면에 넣기 전에 반드시 처리한다 */
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+      });
     }
 
     function put(id, v) {
@@ -1145,11 +1209,12 @@
         return;
       }
       logGroup.innerHTML = data.log.slice(0, 6).map(function (e) {
+        var sub = e.memo ? esc(e.memo) + ' · ' + ago(e.at) : ago(e.at);
         return '<div class="cell has-icon">' +
                  '<span class="cell-ico"><span class="log-dot" style="background:var(--st-' + e.s + ')"></span></span>' +
                  '<span class="cell-body">' +
                    '<span class="cell-title">' + GENDER[e.g] + ' ' + pad3(e.no) + '번 · ' + STATUS[e.s] + '</span>' +
-                   '<span class="cell-sub">' + ago(e.at) + '</span>' +
+                   '<span class="cell-sub">' + sub + '</span>' +
                  '</span>' +
                '</div>';
       }).join('');
@@ -1178,6 +1243,8 @@
     var rangeHint = document.getElementById('rangeHint');
     var seg       = document.getElementById('genderSeg');
     var pick      = document.getElementById('statusPick');
+    var memoInput = document.getElementById('memoInput');
+    var memoCount = document.getElementById('memoCount');
     var toastEl   = document.getElementById('toast');
 
     var draft = { g: 'm', no: null, s: null };
@@ -1223,6 +1290,8 @@
     function openSheet() {
       draft = { g: 'm', no: null, s: null };
       noInput.value = '';
+      memoInput.value = '';
+      memoCount.textContent = '0';
       noError.classList.remove('is-on');
       syncGender(); syncStatus(); validate();
       scrim.classList.add('is-open');
@@ -1249,6 +1318,11 @@
       validate();
     });
 
+    /* 메모는 선택 입력이라 등록 버튼 활성화 조건에는 넣지 않는다 */
+    memoInput.addEventListener('input', function () {
+      memoCount.textContent = memoInput.value.length;
+    });
+
     seg.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-g]');
       if (!b) return;
@@ -1268,12 +1342,13 @@
     submitBtn.addEventListener('click', function () {
       if (submitBtn.disabled) return;
       var g = draft.g, no = draft.no, s = draft.s;
+      var memo = memoInput.value.trim();
 
       /* 정상으로 되돌리면 예외에서 지운다 */
       if (s === 'ok') delete data[g][no];
-      else data[g][no] = s;
+      else data[g][no] = { s: s, memo: memo };
 
-      data.log.unshift({ g: g, no: no, s: s, at: new Date().toISOString() });
+      data.log.unshift({ g: g, no: no, s: s, memo: memo, at: new Date().toISOString() });
       data.log = data.log.slice(0, 30);
 
       persist();
