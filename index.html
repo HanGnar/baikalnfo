@@ -649,22 +649,24 @@
   .memo-field {
     background: var(--bg-cell);
     border-radius: var(--r-card);
-    padding: 10px 16px 8px;
+    padding: 9px 16px;
   }
   .memo-field textarea {
     display: block;
     width: 100%;
-    min-height: 48px;   /* 두 줄 높이 */
+    height: 23px;       /* 한 줄에 딱 맞게 시작 — 입력하면 자동으로 늘어난다 */
+    max-height: 108px;
     border: 0;
     padding: 0;
     background: none;
     font: inherit;
     letter-spacing: inherit;
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1.4;
     color: var(--label);
     resize: none;
     outline: none;
+    overflow-y: auto;
   }
   .memo-field textarea::placeholder { color: var(--label-3); }
 
@@ -1205,7 +1207,7 @@
       <div>
         <p class="field-label">메모<span class="optional">선택</span></p>
         <div class="memo-field">
-          <textarea id="memoInput" rows="2" maxlength="100"
+          <textarea id="memoInput" rows="1" maxlength="100"
                     placeholder="OOO회원님 열쇠 분실 연락처 010-1234-5678"
                     aria-label="메모 (선택 입력)"></textarea>
         </div>
@@ -1549,6 +1551,7 @@
       draft = { g: presetG || 'm', no: null, s: null };
       noInput.value = presetNo ? String(presetNo) : '';
       memoInput.value = '';
+      memoInput.style.height = '';   /* 다시 한 줄 높이로 되돌린다 */
       memoCount.textContent = '0';
       noError.classList.remove('is-on');
       syncGender(); syncStatus(); validate();
@@ -1579,9 +1582,16 @@
       validate();
     });
 
+    /* 내용에 맞춰 높이를 맞춘다 — 한 줄에서 시작해 필요한 만큼만 늘어난다 */
+    function fitMemo() {
+      memoInput.style.height = 'auto';
+      memoInput.style.height = memoInput.scrollHeight + 'px';
+    }
+
     /* 메모는 선택 입력이라 등록 버튼 활성화 조건에는 넣지 않는다 */
     memoInput.addEventListener('input', function () {
       memoCount.textContent = memoInput.value.length;
+      fitMemo();
     });
 
     seg.addEventListener('click', function (e) {
