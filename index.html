@@ -1,3 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<!-- 이 줄이 없으면 모바일이 화면을 980px로 가정하고 축소해서 그린다.
+     viewport-fit=cover 가 있어야 노치 영역(safe-area-inset)도 인식된다. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<!-- 브라우저 상하단 색을 앱 배경과 맞춘다 -->
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+
+<!-- 홈 화면에 추가했을 때 주소창 없이 전체화면으로 열리게 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="바이칼 서현점">
+
 <title>바이칼 휘트니스 서현점 — 근무 관리</title>
 
 <style>
@@ -124,6 +142,8 @@
 
   body {
     margin: 0;
+    overflow: hidden;          /* 문서는 스크롤하지 않는다 — 앱 안쪽만 스크롤 */
+    overscroll-behavior: none; /* 고무줄 튕김 방지 */
     background: var(--bg-grouped);
     color: var(--label);
     font-family: var(--sans);
@@ -162,15 +182,18 @@
   .app {
     position: relative;
     width: 100%;
-    max-width: 430px;
     height: 100vh;
     height: 100dvh;
-    margin: 0 auto;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     background: var(--bg-grouped);
     padding-top: env(safe-area-inset-top);
+  }
+
+  /* 폰에서는 무조건 꽉 채우고, 넓은 화면에서만 폭을 제한한다 */
+  @media (min-width: 600px) {
+    .app { max-width: 430px; margin: 0 auto; }
   }
 
   /* ---------- 네비게이션 바 (iOS Large Title) ---------- */
@@ -669,6 +692,9 @@
   }
 
 </style>
+</head>
+
+<body>
 
 <div class="app">
 
@@ -989,3 +1015,6 @@
     });
   })();
 </script>
+
+</body>
+</html>
