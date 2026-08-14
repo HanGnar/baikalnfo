@@ -649,19 +649,19 @@
   .memo-field {
     background: var(--bg-cell);
     border-radius: var(--r-card);
-    padding: 11px 16px 9px;
+    padding: 10px 16px 8px;
   }
   .memo-field textarea {
     display: block;
     width: 100%;
-    min-height: 62px;
+    min-height: 48px;   /* 두 줄 높이 */
     border: 0;
     padding: 0;
     background: none;
     font: inherit;
     letter-spacing: inherit;
     font-size: 17px;
-    line-height: var(--lh-body);
+    line-height: 1.4;
     color: var(--label);
     resize: none;
     outline: none;
@@ -1007,10 +1007,7 @@
         </button>
       </div>
 
-      <button class="btn-filled" type="button" id="openSheet">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>
-        키 현황 등록
-      </button>
+      <button class="btn-filled" type="button" id="openSheet">키 현황 등록</button>
     </section>
 
     <!-- ============ 인수인계 현황 ============ -->
@@ -1209,7 +1206,7 @@
         <p class="field-label">메모<span class="optional">선택</span></p>
         <div class="memo-field">
           <textarea id="memoInput" rows="2" maxlength="100"
-                    placeholder="예) 손잡이 파손 · 회원이 내일 반납 예정"
+                    placeholder="OOO회원님 열쇠 분실 연락처 010-1234-5678"
                     aria-label="메모 (선택 입력)"></textarea>
         </div>
         <p class="memo-count"><span id="memoCount">0</span> / 100</p>
