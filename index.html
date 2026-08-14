@@ -317,7 +317,7 @@
   .key-card {
     background: var(--bg-cell);
     border-radius: var(--r-card);
-    padding: 14px 14px 12px;
+    padding: 14px 14px 10px;
     text-align: left;
     transition: opacity .15s ease;
   }
@@ -335,14 +335,15 @@
 
   /* 눌러서 들어가는 카드임을 알리는 안내 */
   .card-hint {
-    margin-top: 10px;
-    padding-top: 9px;
+    margin-top: 7px;
+    padding-top: 6px;
     border-top: .5px solid var(--separator);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 3px;
     font-size: 12.5px;
+    line-height: 1.2;
     color: var(--label-2);
   }
   .card-range {
@@ -425,9 +426,10 @@
 
   /* ---------- 빈 상태 ---------- */
   .empty {
-    padding: 26px 20px;
+    padding: 14px 20px;
     text-align: center;
     font-size: 15px;
+    line-height: 1.45;
     color: var(--label-2);
   }
 
@@ -596,13 +598,6 @@
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
-  .sum-pct {
-    min-width: 54px;
-    text-align: right;
-    font-size: 14px;
-    color: var(--label-2);
-    font-variant-numeric: tabular-nums;
-  }
   .cell.is-total { background: var(--fill-4); }
   .cell.is-total .sum-label,
   .cell.is-total .sum-n { font-weight: 700; }
@@ -624,6 +619,8 @@
     padding: 12px 14px 14px;
     border-top: .5px solid var(--separator);
   }
+  /* display:flex 가 hidden 속성의 기본 display:none 을 덮어쓰므로 명시한다 */
+  .chips[hidden] { display: none; }
   .chips span {
     padding: 4px 8px;
     border-radius: 6px;
@@ -1390,8 +1387,6 @@
         byStatus[k].sort(function (a, b) { return a.no - b.no; });
       });
 
-      function pct(n) { return (n / total * 100).toFixed(1); }
-
       var html = '';
 
       /* --- 최상단 요약 표 --- */
@@ -1402,13 +1397,11 @@
                   '<span class="sum-dot" style="background:var(--st-' + k + ')"></span>' +
                   '<span class="sum-label">' + STATUS[k] + '</span>' +
                   '<span class="sum-n">' + c[k] + '</span>' +
-                  '<span class="sum-pct">' + pct(c[k]) + '%</span>' +
                 '</div>';
       });
       html += '<div class="cell sum-row is-total">' +
                 '<span class="sum-label">합계</span>' +
                 '<span class="sum-n">' + total + '</span>' +
-                '<span class="sum-pct">100%</span>' +
               '</div></div></section>';
 
       /* --- 분실 · 고장 · 기타: 번호와 코멘트 --- */
