@@ -1,0 +1,839 @@
+<title>바이칼 휘트니스 서현점 — 근무 관리</title>
+
+<style>
+  /* ============================================================
+     TOKENS
+     색이 쓰이는 곳은 두 군데뿐 — 성별 구분(남/여), 키 상태(4종).
+     버튼·탭 같은 조작 요소는 전부 무채색으로 둔다.
+     ============================================================ */
+  :root {
+    --ground:    #E4E7E6;
+    --surface:   #FFFFFF;
+    --surface-2: #F1F4F3;
+    --surface-3: #E8ECEB;
+    --ink:       #141817;
+    --ink-2:     #4C5453;
+    --ink-3:     #838C8A;
+    --line:      #DCE1E0;
+    --line-2:    #C9D0CE;
+
+    --accent:    #141817;
+    --on-accent: #FFFFFF;
+
+    /* 성별 */
+    --male:   #2F6FD9;
+    --female: #D93B72;
+
+    /* 키 상태 */
+    --st-ok:     #1F9E6E;  /* 정상 · 초록 */
+    --st-lost:   #D0453B;  /* 분실 · 빨강 */
+    --st-broken: #DE7B12;  /* 고장 · 주황 */
+    --st-etc:    #2F6FD9;  /* 기타 · 파랑 */
+
+    --shadow-1: 0 1px 2px rgba(20, 24, 23, .06), 0 1px 1px rgba(20, 24, 23, .04);
+    --shadow-2: 0 6px 24px rgba(20, 24, 23, .10), 0 1px 2px rgba(20, 24, 23, .06);
+    --shadow-tab: 0 -1px 0 var(--line), 0 -8px 24px rgba(20, 24, 23, .06);
+
+    --sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard",
+            "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, "Roboto Mono", monospace;
+
+    --r-card: 16px;
+    --r-chip: 999px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:    #080A0A;
+      --surface:   #151918;
+      --surface-2: #1D2221;
+      --surface-3: #262C2B;
+      --ink:       #EDF0EF;
+      --ink-2:     #A3ADAB;
+      --ink-3:     #6C7674;
+      --line:      #272D2C;
+      --line-2:    #343B3A;
+
+      --accent:    #EDF0EF;
+      --on-accent: #0B0E0D;
+
+      --male:   #6FA4FF;
+      --female: #FF77A6;
+
+      --st-ok:     #34C48D;
+      --st-lost:   #FF6B5F;
+      --st-broken: #F59B2E;
+      --st-etc:    #6FA4FF;
+
+      --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+      --shadow-2: 0 8px 28px rgba(0, 0, 0, .55);
+      --shadow-tab: 0 -1px 0 var(--line), 0 -8px 24px rgba(0, 0, 0, .4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:    #080A0A;
+    --surface:   #151918;
+    --surface-2: #1D2221;
+    --surface-3: #262C2B;
+    --ink:       #EDF0EF;
+    --ink-2:     #A3ADAB;
+    --ink-3:     #6C7674;
+    --line:      #272D2C;
+    --line-2:    #343B3A;
+    --accent:    #EDF0EF;
+    --on-accent: #0B0E0D;
+    --male:   #6FA4FF;
+    --female: #FF77A6;
+    --st-ok:     #34C48D;
+    --st-lost:   #FF6B5F;
+    --st-broken: #F59B2E;
+    --st-etc:    #6FA4FF;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+    --shadow-2: 0 8px 28px rgba(0, 0, 0, .55);
+    --shadow-tab: 0 -1px 0 var(--line), 0 -8px 24px rgba(0, 0, 0, .4);
+  }
+
+  :root[data-theme="light"] {
+    --ground:    #E4E7E6;
+    --surface:   #FFFFFF;
+    --surface-2: #F1F4F3;
+    --surface-3: #E8ECEB;
+    --ink:       #141817;
+    --ink-2:     #4C5453;
+    --ink-3:     #838C8A;
+    --line:      #DCE1E0;
+    --line-2:    #C9D0CE;
+    --accent:    #141817;
+    --on-accent: #FFFFFF;
+    --male:   #2F6FD9;
+    --female: #D93B72;
+    --st-ok:     #1F9E6E;
+    --st-lost:   #D0453B;
+    --st-broken: #DE7B12;
+    --st-etc:    #2F6FD9;
+    --shadow-1: 0 1px 2px rgba(20, 24, 23, .06), 0 1px 1px rgba(20, 24, 23, .04);
+    --shadow-2: 0 6px 24px rgba(20, 24, 23, .10), 0 1px 2px rgba(20, 24, 23, .06);
+    --shadow-tab: 0 -1px 0 var(--line), 0 -8px 24px rgba(20, 24, 23, .06);
+  }
+
+  /* ============================================================
+     BASE
+     ============================================================ */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  h2, h3, p, ul { margin: 0; }
+  ul { list-style: none; padding: 0; }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+  .mono {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ============================================================
+     APP SHELL
+     ============================================================ */
+  .app {
+    max-width: 430px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0 auto;
+    background: var(--surface-2);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: var(--shadow-2);
+  }
+
+  .scroll {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 2px 18px 104px;
+    overflow-x: hidden;
+  }
+
+  /* ---------- 헤더 ---------- */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+    -webkit-backdrop-filter: saturate(160%) blur(14px);
+    backdrop-filter: saturate(160%) blur(14px);
+    border-bottom: 1px solid transparent;
+    padding: 14px 18px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: border-color .2s ease;
+  }
+  .topbar.is-stuck { border-bottom-color: var(--line); }
+
+  /* 로고 + 지점 정보 묶음 */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+  }
+  .logo {
+    width: 30px;
+    height: 35px;
+    flex: none;
+    display: block;
+    filter: drop-shadow(0 1px 1.5px rgba(11, 42, 92, .3));
+  }
+  .brand-text { min-width: 0; }
+
+  .branch {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -.025em;
+  }
+  .branch svg { color: var(--ink-3); flex: none; }
+
+  .shift {
+    margin-top: 1px;
+    font-size: 12px;
+    color: var(--ink-3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .shift .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); }
+
+  .bell {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+    flex: none;
+  }
+  .bell .badge {
+    position: absolute;
+    top: 7px; right: 7px;
+    min-width: 15px; height: 15px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--st-lost);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 15px;
+    text-align: center;
+    border: 2px solid var(--surface);
+    box-sizing: content-box;
+  }
+
+  /* ---------- 섹션 헤더 ---------- */
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 11px;
+  }
+  .sec-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -.03em;
+  }
+  .sec-link {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-3);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0;
+    flex: none;
+  }
+
+  /* ============================================================
+     키 관리 — 남/여 현황 카드
+     ============================================================ */
+  .key-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .key-card {
+    background: color-mix(in srgb, var(--c) 7%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--c) 20%, var(--line));
+    border-radius: var(--r-card);
+    padding: 15px 14px 13px;
+    text-align: left;
+    box-shadow: var(--shadow-1);
+    transition: transform .16s ease;
+  }
+  .key-card:active { transform: scale(.985); }
+
+  .key-card .who {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -.03em;
+    color: var(--c);
+  }
+  .key-card .range {
+    margin-top: 2px;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    letter-spacing: -.01em;
+  }
+  .key-card .total {
+    margin-top: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+  }
+  .key-card .total .n {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -.045em;
+    line-height: 1.1;
+  }
+  .key-card .total .u { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+
+  .breakdown {
+    margin-top: 12px;
+    padding-top: 11px;
+    border-top: 1px solid color-mix(in srgb, var(--c) 18%, var(--line));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .breakdown li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+  }
+  .breakdown i {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--d);
+    flex: none;
+  }
+  .breakdown .l { color: var(--ink-2); flex: 1; letter-spacing: -.02em; }
+  .breakdown .v {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+  }
+
+  /* 키 현황 등록 버튼 */
+  .btn-register {
+    margin-top: 10px;
+    width: 100%;
+    height: 50px;
+    border-radius: var(--r-card);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -.03em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    box-shadow: var(--shadow-1);
+    transition: transform .16s ease, opacity .16s ease;
+  }
+  .btn-register:active { transform: scale(.985); opacity: .92; }
+
+  /* ============================================================
+     공용 패널 (인수인계 · 분실물 · 특이사항)
+     ============================================================ */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    overflow: hidden;
+    box-shadow: var(--shadow-1);
+  }
+
+  /* 3칸 숫자 스트립 */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid var(--line);
+  }
+  .stat {
+    padding: 14px 6px 13px;
+    text-align: center;
+    border-right: 1px solid var(--line);
+  }
+  .stat:last-child { border-right: 0; }
+  .stat .n {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 23px;
+    font-weight: 700;
+    letter-spacing: -.045em;
+    line-height: 1.1;
+    color: var(--c, var(--ink));
+  }
+  .stat .l {
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: var(--ink-3);
+    letter-spacing: -.02em;
+  }
+
+  /* 인수인계 단계 */
+  .steps { display: flex; flex-direction: column; }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--line);
+  }
+  .step .mark {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex: none;
+    border: 1.5px solid var(--line-2);
+    color: var(--ink-3);
+  }
+  .step.is-done .mark {
+    background: var(--st-ok);
+    border-color: var(--st-ok);
+    color: #fff;
+  }
+  .step .label {
+    font-size: 13.5px;
+    font-weight: 650;
+    letter-spacing: -.03em;
+    flex: none;
+    width: 34px;
+  }
+  .step .desc {
+    flex: 1;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    letter-spacing: -.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .step .state {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    padding: 3px 9px;
+    border-radius: var(--r-chip);
+    flex: none;
+    color: var(--ink-3);
+    background: var(--surface-3);
+  }
+  .step.is-done .state {
+    color: var(--st-ok);
+    background: color-mix(in srgb, var(--st-ok) 13%, transparent);
+  }
+
+  /* 패널 안 목록 행 */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--line);
+    transition: background-color .16s ease;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row:active { background: var(--surface-2); }
+
+  .row .body { flex: 1; min-width: 0; }
+  .row .t {
+    font-size: 13.5px;
+    font-weight: 650;
+    letter-spacing: -.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row .s {
+    margin-top: 2px;
+    font-size: 11.5px;
+    color: var(--ink-3);
+    letter-spacing: -.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row .n {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    flex: none;
+  }
+  .row .chev { color: var(--ink-3); flex: none; }
+
+  /* ============================================================
+     하단 탭바
+     ============================================================ */
+  .tabbar {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    align-items: stretch;
+    gap: 2px;
+    padding: 7px 8px calc(9px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
+    backdrop-filter: saturate(160%) blur(16px);
+    box-shadow: var(--shadow-tab);
+  }
+
+  .tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0 3px;
+    color: var(--ink-3);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    border-radius: 12px;
+    transition: color .16s ease;
+  }
+  .tab[aria-current="page"] { color: var(--ink); font-weight: 700; }
+  .tab:active .tab-ico { transform: scale(.92); }
+
+  .tab-ico {
+    width: 52px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--r-chip);
+    transition: background-color .18s ease, transform .16s ease;
+  }
+  .tab[aria-current="page"] .tab-ico { background: var(--surface-3); }
+
+  /* ---------- 등장 모션 ---------- */
+  .rise { opacity: 0; transform: translateY(10px); animation: rise .5s cubic-bezier(.2, .8, .25, 1) forwards; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    .rise { opacity: 1; transform: none; }
+  }
+
+  @media (min-width: 520px) {
+    .app { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+  }
+</style>
+
+<div class="app">
+
+  <!-- ============ 헤더 ============ -->
+  <header class="topbar" id="topbar">
+    <div class="brand">
+      <!-- BK 방패 심볼 — 헤더 크기에서 읽히도록 단순화한 버전 -->
+      <svg class="logo" viewBox="0 0 40 47" role="img" aria-label="바이칼 휘트니스">
+        <defs>
+          <linearGradient id="bk-rim" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#F2F5F8"/>
+            <stop offset=".45" stop-color="#B9C4CF"/>
+            <stop offset="1" stop-color="#8B99A8"/>
+          </linearGradient>
+          <linearGradient id="bk-face" x1=".15" y1="0" x2=".85" y2="1">
+            <stop offset="0" stop-color="#2E86E0"/>
+            <stop offset=".5" stop-color="#1257B4"/>
+            <stop offset="1" stop-color="#0A2E72"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#bk-rim)" d="M6 3h28a3 3 0 0 1 3 3v18c0 9-7 15-17 20C10 39 3 33 3 24V6a3 3 0 0 1 3-3z"/>
+        <path fill="url(#bk-face)" d="M8 5.5h24a2.5 2.5 0 0 1 2.5 2.5v16c0 7.7-6 12.9-14.5 17.2C11.5 36.9 5.5 31.7 5.5 24V8a2.5 2.5 0 0 1 2.5-2.5z"/>
+        <text x="20" y="27" text-anchor="middle" fill="#fff"
+              font-family="-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif"
+              font-size="16.5" font-weight="800" letter-spacing="-.5">BK</text>
+      </svg>
+
+      <div class="brand-text">
+        <button class="branch" type="button">
+          바이칼 휘트니스 서현점
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="shift">
+          <span class="mono">08.15 금</span>
+          <span class="dot"></span>
+          <span>오픈 근무 · 김민재</span>
+        </div>
+      </div>
+    </div>
+    <button class="bell" type="button" aria-label="알림 3건">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+      <span class="badge mono">3</span>
+    </button>
+  </header>
+
+  <div class="scroll">
+
+    <!-- ============ 키 관리 현황 ============ -->
+    <section class="rise" style="animation-delay:.02s" aria-labelledby="key-t">
+      <div class="sec-head">
+        <h2 class="sec-title" id="key-t">전체 키 현황</h2>
+        <button class="sec-link" type="button">
+          상세 보기
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      <div class="key-cards">
+        <button class="key-card" type="button" style="--c:var(--male)">
+          <span class="who">남자 키</span>
+          <p class="range">001 – 200</p>
+          <p class="total"><span class="n">200</span><span class="u">개</span></p>
+          <ul class="breakdown">
+            <li style="--d:var(--st-ok)"><i></i><span class="l">정상</span><span class="v">186</span></li>
+            <li style="--d:var(--st-lost)"><i></i><span class="l">분실</span><span class="v">4</span></li>
+            <li style="--d:var(--st-broken)"><i></i><span class="l">고장</span><span class="v">6</span></li>
+            <li style="--d:var(--st-etc)"><i></i><span class="l">기타</span><span class="v">4</span></li>
+          </ul>
+        </button>
+
+        <button class="key-card" type="button" style="--c:var(--female)">
+          <span class="who">여자 키</span>
+          <p class="range">001 – 200</p>
+          <p class="total"><span class="n">200</span><span class="u">개</span></p>
+          <ul class="breakdown">
+            <li style="--d:var(--st-ok)"><i></i><span class="l">정상</span><span class="v">189</span></li>
+            <li style="--d:var(--st-lost)"><i></i><span class="l">분실</span><span class="v">3</span></li>
+            <li style="--d:var(--st-broken)"><i></i><span class="l">고장</span><span class="v">5</span></li>
+            <li style="--d:var(--st-etc)"><i></i><span class="l">기타</span><span class="v">3</span></li>
+          </ul>
+        </button>
+      </div>
+
+      <button class="btn-register" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        키 현황 등록
+      </button>
+    </section>
+
+    <!-- ============ 인수인계 현황 ============ -->
+    <section class="rise" style="animation-delay:.08s" aria-labelledby="ho-t">
+      <div class="sec-head">
+        <h2 class="sec-title" id="ho-t">인수인계 현황</h2>
+        <button class="sec-link" type="button">
+          상세 보기
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      <div class="panel">
+        <div class="steps">
+          <div class="step is-done">
+            <span class="mark">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            </span>
+            <span class="label">인수</span>
+            <span class="desc">09:00 · 박지영 → 나</span>
+            <span class="state">완료</span>
+          </div>
+          <div class="step">
+            <span class="mark">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+            </span>
+            <span class="label">인계</span>
+            <span class="desc">18:00 예정 · 최유리</span>
+            <span class="state">대기</span>
+          </div>
+        </div>
+
+        <button class="row" type="button">
+          <span class="body">
+            <span class="t">아직 확인하지 않은 전달사항</span>
+            <span class="s">박지영이 오전에 남김</span>
+          </span>
+          <span class="n" style="color:var(--st-broken)">2건</span>
+          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ 분실물 현황 ============ -->
+    <section class="rise" style="animation-delay:.14s" aria-labelledby="lost-t">
+      <div class="sec-head">
+        <h2 class="sec-title" id="lost-t">분실물 현황</h2>
+        <button class="sec-link" type="button">
+          상세 보기
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      <div class="panel">
+        <div class="stats">
+          <div class="stat">
+            <p class="n">14</p>
+            <p class="l">보관 중</p>
+          </div>
+          <div class="stat" style="--c:var(--st-etc)">
+            <p class="n">2</p>
+            <p class="l">오늘 접수</p>
+          </div>
+          <div class="stat" style="--c:var(--st-broken)">
+            <p class="n">3</p>
+            <p class="l">보관 만료 임박</p>
+          </div>
+        </div>
+
+        <button class="row" type="button">
+          <span class="body">
+            <span class="t">에어팟 프로 (흰색 케이스)</span>
+            <span class="s">2층 러닝머신 구역 · 40분 전 접수</span>
+          </span>
+          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+
+        <button class="row" type="button">
+          <span class="body">
+            <span class="t">검정 후드집업 (L)</span>
+            <span class="s">남자 샤워실 · 어제 접수</span>
+          </span>
+          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ 최근 특이사항 ============ -->
+    <section class="rise" style="animation-delay:.2s" aria-labelledby="log-t">
+      <div class="sec-head">
+        <h2 class="sec-title" id="log-t">최근 특이사항</h2>
+        <span class="eyebrow">오늘</span>
+      </div>
+
+      <div class="panel">
+        <button class="row" type="button">
+          <span class="body">
+            <span class="t">남자 012번 키 고장 등록 (손잡이 파손)</span>
+            <span class="s">김인수 · 10분 전</span>
+          </span>
+          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+
+        <button class="row" type="button">
+          <span class="body">
+            <span class="t">여자 105번 키 회원 연락 완료</span>
+            <span class="s">박지영 · 1시간 전</span>
+          </span>
+          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+
+        <button class="row" type="button">
+          <span class="body">
+            <span class="t">분실물 3건 보관 만료 예정 (8/18)</span>
+            <span class="s">자동 알림 · 2시간 전</span>
+          </span>
+          <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ============ 하단 탭바 ============ -->
+  <nav class="tabbar" aria-label="주요 메뉴">
+    <button class="tab" type="button" aria-current="page">
+      <span class="tab-ico">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M9.5 21v-6.5h5V21"/></svg>
+      </span>
+      홈
+    </button>
+    <button class="tab" type="button">
+      <span class="tab-ico">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="4.5"/><path d="m11.7 11.7 8.3 8.3"/><path d="m15.4 15.4 2-2"/><path d="m17.7 17.7 2-2"/></svg>
+      </span>
+      키 관리
+    </button>
+    <button class="tab" type="button">
+      <span class="tab-ico">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5h13"/><path d="M13.5 5 17 8.5 13.5 12"/><path d="M20 15.5H7"/><path d="M10.5 12 7 15.5l3.5 3.5"/></svg>
+      </span>
+      인수인계
+    </button>
+    <button class="tab" type="button">
+      <span class="tab-ico">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="4.5" rx="1.5"/><path d="M4.8 8.5v9.7a2 2 0 0 0 2 2h10.4a2 2 0 0 0 2-2V8.5"/><path d="M10 12.5h4"/></svg>
+      </span>
+      분실물
+    </button>
+  </nav>
+
+</div>
+
+<script>
+  (function () {
+    'use strict';
+
+    /* 헤더 구분선: 스크롤 시작하면 나타난다 */
+    var topbar = document.getElementById('topbar');
+    window.addEventListener('scroll', function () {
+      topbar.classList.toggle('is-stuck', window.scrollY > 4);
+    }, { passive: true });
+
+    /* 탭바 선택 상태 */
+    var tabs = document.querySelectorAll('.tab');
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (t) { t.removeAttribute('aria-current'); });
+        tab.setAttribute('aria-current', 'page');
+      });
+    });
+  })();
+</script>
