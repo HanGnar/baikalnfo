@@ -406,11 +406,15 @@
   .total-value { font-size: 17px; font-weight: 600; }
   .cell + .stats { border-top: .5px solid var(--separator); }
 
-  /* .stats(3칸)가 파일 뒤쪽에 있어 덮어쓰므로 선택자를 겹쳐 우선순위를 올린다 */
+  /* .stats(3칸)·.cell 이 파일 뒤쪽에 있어 덮어쓰므로 선택자를 겹쳐 우선순위를 올린다 */
   .stats.stats-4 { grid-template-columns: repeat(4, 1fr); }
-  .stats-4 .stat { padding: 11px 3px 10px; }
-  .stats-4 .stat-num { font-size: 21px; }
-  .stats-4 .stat-label { font-size: 12px; }
+  .stats-4 .stat { padding: 9px 3px 8px; }
+  .stats-4 .stat-num { font-size: 20px; line-height: 1.2; }
+  .stats-4 .stat-label { font-size: 11.5px; line-height: 1.25; }
+  .stats-4 .stat + .stat::before { top: 9px; bottom: 9px; }
+
+  /* 상단 '전체 키 / 407개' 줄도 함께 낮춘다 */
+  .cell.total-cell { min-height: 40px; padding-top: 8px; padding-bottom: 8px; }
 
   /* ---------- 빈 상태 ---------- */
   .empty {
