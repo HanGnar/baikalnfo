@@ -598,7 +598,7 @@
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
-  .cell.is-total { background: var(--fill-4); }
+  /* 합계 줄은 배경을 깔지 않고 굵기로만 구분한다 */
   .cell.is-total .sum-label,
   .cell.is-total .sum-n { font-weight: 700; }
 
@@ -786,11 +786,22 @@
     text-overflow: ellipsis;
   }
   .cell-sub {
+    margin-top: 3px;
     font-size: 13px;      /* iOS Footnote */
     color: var(--label-2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* 메모는 잘라내지 않고 줄바꿈해서 전부 보여준다 */
+  .cell-sub.wrap {
+    margin-top: 5px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.5;
+    word-break: break-word;
   }
 
   .cell-value {
@@ -1417,7 +1428,7 @@
             return '<button class="cell" type="button" data-edit="' + g + ':' + it.no + '">' +
                      '<span class="cell-body">' +
                        '<span class="cell-title">' + pad3(it.no) + '번</span>' +
-                       (it.memo ? '<span class="cell-sub">' + esc(it.memo) + '</span>' : '') +
+                       (it.memo ? '<span class="cell-sub wrap">' + esc(it.memo) + '</span>' : '') +
                      '</span>' + CHEV +
                    '</button>';
           }).join('');
