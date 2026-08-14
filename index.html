@@ -523,6 +523,99 @@
     flex: none;
   }
 
+  /* ============================================================
+     상세 화면 — 오른쪽에서 밀려 들어오는 iOS 방식
+     ============================================================ */
+  .detail {
+    position: absolute;
+    inset: 0;
+    z-index: 55;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-grouped);
+    padding-top: env(safe-area-inset-top);
+    transform: translateX(100%);
+    transition: transform .4s cubic-bezier(.32, .72, 0, 1);
+  }
+  .detail.is-open { transform: none; }
+
+  .detail-nav {
+    flex: none;
+    height: 44px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0 12px;
+    background: var(--bg-nav);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: .5px solid var(--separator);
+  }
+  .detail-nav .title {
+    font-size: 17px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .back {
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 0;
+    font-size: 17px;
+    color: var(--blue);
+  }
+  .back:active { opacity: .4; }
+
+  /* 요약 표 */
+  .sum-row { gap: 10px; }
+  .sum-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .sum-label { flex: 1; font-size: 17px; }
+  .sum-n {
+    min-width: 46px;
+    text-align: right;
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .sum-pct {
+    min-width: 54px;
+    text-align: right;
+    font-size: 14px;
+    color: var(--label-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .cell.is-total { background: var(--fill-4); }
+  .cell.is-total .sum-label,
+  .cell.is-total .sum-n { font-weight: 700; }
+
+  /* 상태별 섹션 제목 */
+  .status-title { display: flex; align-items: center; gap: 8px; }
+  .sec-count {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--label-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 정상 키 번호 묶음 */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 14px 14px;
+    border-top: .5px solid var(--separator);
+  }
+  .chips span {
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--fill-4);
+    font-size: 13px;
+    color: var(--label-2);
+    font-variant-numeric: tabular-nums;
+  }
+
   .field-label {
     font-size: 13px;
     color: var(--label-2);
@@ -867,7 +960,7 @@
       </div>
 
       <div class="key-cards">
-        <button class="key-card" type="button" style="--c:var(--male)">
+        <button class="key-card" type="button" data-detail="m" style="--c:var(--male)">
           <span class="card-who">남자 키</span>
           <p class="card-range tnum">001 – 200</p>
           <p class="card-total"><span class="num tnum">200</span><span class="unit">개</span></p>
@@ -879,7 +972,7 @@
           </ul>
         </button>
 
-        <button class="key-card" type="button" style="--c:var(--female)">
+        <button class="key-card" type="button" data-detail="f" style="--c:var(--female)">
           <span class="card-who">여자 키</span>
           <p class="card-range tnum">001 – 207</p>
           <p class="card-total"><span class="num tnum">207</span><span class="unit">개</span></p>
@@ -1018,6 +1111,19 @@
       분실물
     </button>
   </nav>
+
+  <!-- ============ 남자/여자 키 상세 화면 ============ -->
+  <section class="detail" id="detail" aria-hidden="true" aria-labelledby="detailTitle">
+    <header class="detail-nav">
+      <button class="back" type="button" id="detailBack">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        홈
+      </button>
+      <span class="title" id="detailTitle">남자 키</span>
+      <span></span>
+    </header>
+    <div class="scroll" id="detailBody"></div>
+  </section>
 
   <!-- ============ 키 현황 등록 시트 ============ -->
   <div class="scrim" id="scrim"></div>
@@ -1232,6 +1338,135 @@
       renderLog();
     }
 
+    /* ==========================================================
+       상세 화면
+       ========================================================== */
+    var detail      = document.getElementById('detail');
+    var detailBody  = document.getElementById('detailBody');
+    var detailTitle = document.getElementById('detailTitle');
+    var detailBack  = document.getElementById('detailBack');
+    var detailG     = null;
+
+    var CHEV = '<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" ' +
+               'stroke="currentColor" stroke-width="2.8" stroke-linecap="round" ' +
+               'stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+
+    function renderDetail(g) {
+      var total = TOTAL[g];
+      var c = countOf(g);
+      var ex = data[g];
+
+      /* 상태별로 번호를 모은다 */
+      var byStatus = { lost: [], broken: [], etc: [] };
+      Object.keys(ex).forEach(function (no) {
+        byStatus[ex[no].s].push({ no: parseInt(no, 10), memo: ex[no].memo || '' });
+      });
+      Object.keys(byStatus).forEach(function (k) {
+        byStatus[k].sort(function (a, b) { return a.no - b.no; });
+      });
+
+      function pct(n) { return (n / total * 100).toFixed(1); }
+
+      var html = '';
+
+      /* --- 최상단 요약 표 --- */
+      html += '<section><div class="sec-head"><h2 class="sec-title">전체 요약</h2></div>' +
+              '<div class="group">';
+      ['ok', 'lost', 'broken', 'etc'].forEach(function (k) {
+        html += '<div class="cell sum-row">' +
+                  '<span class="sum-dot" style="background:var(--st-' + k + ')"></span>' +
+                  '<span class="sum-label">' + STATUS[k] + '</span>' +
+                  '<span class="sum-n">' + c[k] + '</span>' +
+                  '<span class="sum-pct">' + pct(c[k]) + '%</span>' +
+                '</div>';
+      });
+      html += '<div class="cell sum-row is-total">' +
+                '<span class="sum-label">합계</span>' +
+                '<span class="sum-n">' + total + '</span>' +
+                '<span class="sum-pct">100%</span>' +
+              '</div></div></section>';
+
+      /* --- 분실 · 고장 · 기타: 번호와 코멘트 --- */
+      ['lost', 'broken', 'etc'].forEach(function (k) {
+        var list = byStatus[k];
+        html += '<section><div class="sec-head"><h2 class="sec-title status-title">' +
+                  '<span class="sum-dot" style="background:var(--st-' + k + ')"></span>' +
+                  STATUS[k] + '<span class="sec-count">' + list.length + '</span>' +
+                '</h2></div><div class="group">';
+        if (!list.length) {
+          html += '<p class="empty">해당하는 키가 없습니다</p>';
+        } else {
+          html += list.map(function (it) {
+            return '<button class="cell" type="button" data-edit="' + g + ':' + it.no + '">' +
+                     '<span class="cell-body">' +
+                       '<span class="cell-title">' + pad3(it.no) + '번</span>' +
+                       (it.memo ? '<span class="cell-sub">' + esc(it.memo) + '</span>' : '') +
+                     '</span>' + CHEV +
+                   '</button>';
+          }).join('');
+        }
+        html += '</div></section>';
+      });
+
+      /* --- 정상: 번호가 많아 접어둔다 --- */
+      html += '<section><div class="sec-head"><h2 class="sec-title status-title">' +
+                '<span class="sum-dot" style="background:var(--st-ok)"></span>' +
+                '정상<span class="sec-count">' + c.ok + '</span>' +
+              '</h2></div><div class="group">' +
+                '<button class="cell" type="button" id="okToggle">' +
+                  '<span class="cell-body"><span class="cell-title">번호 전체 보기</span></span>' +
+                  '<span class="cell-value">' + c.ok + '개</span>' + CHEV +
+                '</button>' +
+                '<div class="chips" id="okChips" hidden></div>' +
+              '</div></section>';
+
+      detailBody.innerHTML = html;
+
+      /* 정상 번호는 펼칠 때 만든다 — 200개를 미리 그릴 필요가 없다 */
+      var toggle = document.getElementById('okToggle');
+      var chips  = document.getElementById('okChips');
+      toggle.addEventListener('click', function () {
+        if (chips.hidden && !chips.innerHTML) {
+          var out = [];
+          for (var i = 1; i <= total; i++) {
+            if (!ex[i]) out.push('<span>' + pad3(i) + '</span>');
+          }
+          chips.innerHTML = out.join('');
+        }
+        chips.hidden = !chips.hidden;
+        toggle.querySelector('.cell-title').textContent =
+          chips.hidden ? '번호 전체 보기' : '번호 접기';
+      });
+
+      /* 목록에서 키를 누르면 그 번호가 채워진 등록창이 열린다 */
+      detailBody.querySelectorAll('[data-edit]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var parts = btn.dataset.edit.split(':');
+          openSheet(parts[0], parts[1]);
+        });
+      });
+    }
+
+    function openDetail(g) {
+      detailG = g;
+      detailTitle.textContent = GENDER[g] + ' 키';
+      renderDetail(g);
+      detailBody.scrollTop = 0;
+      detail.classList.add('is-open');
+      detail.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDetail() {
+      detail.classList.remove('is-open');
+      detail.setAttribute('aria-hidden', 'true');
+      detailG = null;
+    }
+
+    document.querySelectorAll('[data-detail]').forEach(function (card) {
+      card.addEventListener('click', function () { openDetail(card.dataset.detail); });
+    });
+    detailBack.addEventListener('click', closeDetail);
+
     /* ---------- 등록 모달 ---------- */
     var sheet     = document.getElementById('sheet');
     var scrim     = document.getElementById('scrim');
@@ -1287,9 +1522,10 @@
       submitBtn.disabled = !(valid && draft.s);
     }
 
-    function openSheet() {
-      draft = { g: 'm', no: null, s: null };
-      noInput.value = '';
+    /* presetG·presetNo 가 오면 그 키로 채워서 연다 (상세 목록에서 진입) */
+    function openSheet(presetG, presetNo) {
+      draft = { g: presetG || 'm', no: null, s: null };
+      noInput.value = presetNo ? String(presetNo) : '';
       memoInput.value = '';
       memoCount.textContent = '0';
       noError.classList.remove('is-on');
@@ -1304,11 +1540,14 @@
       noInput.blur();
     }
 
-    openBtn.addEventListener('click', openSheet);
+    /* 그냥 넘기면 클릭 이벤트가 첫 인자로 들어가므로 감싼다 */
+    openBtn.addEventListener('click', function () { openSheet(); });
     closeBtn.addEventListener('click', closeSheet);
     scrim.addEventListener('click', closeSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeSheet();
+      if (e.key !== 'Escape') return;
+      if (sheet.classList.contains('is-open')) closeSheet();
+      else if (detail.classList.contains('is-open')) closeDetail();
     });
 
     /* 숫자만 남긴다 — 키패드 외 입력이 들어와도 안전하게 */
@@ -1353,6 +1592,7 @@
 
       persist();
       render();
+      if (detailG) renderDetail(detailG);   /* 상세 화면이 열려 있으면 같이 갱신 */
       closeSheet();
       toast(GENDER[g] + ' ' + pad3(no) + '번 · ' + STATUS[s] + ' 등록됨');
     });
