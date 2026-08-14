@@ -535,13 +535,6 @@
   }
   .toast.is-on { opacity: 1; transform: none; }
 
-  /* 기록 목록의 상태 점 */
-  .log-dot {
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    flex: none;
-  }
-
   /* ============================================================
      상세 화면 — 오른쪽에서 밀려 들어오는 iOS 방식
      ============================================================ */
@@ -1111,14 +1104,14 @@
       </div>
     </section>
 
-    <!-- ============ 최근 특이사항 ============ -->
-    <section class="rise" style="animation-delay:.2s" aria-labelledby="log-t">
+    <!-- ============ 메모 ============ -->
+    <section class="rise" style="animation-delay:.2s" aria-labelledby="memo-t">
       <div class="sec-head">
-        <h2 class="sec-title" id="log-t">최근 특이사항</h2>
+        <h2 class="sec-title" id="memo-t">메모</h2>
       </div>
 
-      <div class="group" id="logGroup">
-        <p class="empty">아직 등록된 변경이 없습니다<br>모든 키가 정상 상태입니다</p>
+      <div class="group">
+        <p class="empty">등록된 내용이 없습니다</p>
       </div>
     </section>
 
@@ -1329,35 +1322,6 @@
     }
     function pad3(n) { return ('00' + n).slice(-3); }
 
-    function ago(iso) {
-      var s = Math.floor((new Date() - new Date(iso)) / 1000);
-      if (s < 60) return '방금';
-      if (s < 3600) return Math.floor(s / 60) + '분 전';
-      if (s < 86400) return Math.floor(s / 3600) + '시간 전';
-      return Math.floor(s / 86400) + '일 전';
-    }
-
-    var logGroup = document.getElementById('logGroup');
-
-    function renderLog() {
-      if (!logGroup) return;
-      if (!data.log.length) {
-        logGroup.innerHTML =
-          '<p class="empty">아직 등록된 변경이 없습니다<br>모든 키가 정상 상태입니다</p>';
-        return;
-      }
-      logGroup.innerHTML = data.log.slice(0, 6).map(function (e) {
-        var sub = e.memo ? esc(e.memo) + ' · ' + ago(e.at) : ago(e.at);
-        return '<div class="cell has-icon">' +
-                 '<span class="cell-ico"><span class="log-dot" style="background:var(--st-' + e.s + ')"></span></span>' +
-                 '<span class="cell-body">' +
-                   '<span class="cell-title">' + GENDER[e.g] + ' ' + pad3(e.no) + '번 · ' + STATUS[e.s] + '</span>' +
-                   '<span class="cell-sub">' + sub + '</span>' +
-                 '</span>' +
-               '</div>';
-      }).join('');
-    }
-
     function render() {
       var m = countOf('m'), f = countOf('f');
       put('mOk', m.ok); put('mLost', m.lost); put('mBroken', m.broken); put('mEtc', m.etc);
@@ -1367,7 +1331,6 @@
       put('tLost',   m.lost   + f.lost);
       put('tBroken', m.broken + f.broken);
       put('tEtc',    m.etc    + f.etc);
-      renderLog();
     }
 
     /* ==========================================================
