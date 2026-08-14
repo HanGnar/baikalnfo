@@ -324,9 +324,26 @@
   .key-card:active { opacity: .6; }
 
   .card-who {
+    display: flex;
+    align-items: center;
+    gap: 2px;
     font-size: 17px;      /* iOS Headline */
     font-weight: 600;
     color: var(--c);
+  }
+  .card-who svg { flex: none; opacity: .5; }
+
+  /* 눌러서 들어가는 카드임을 알리는 안내 */
+  .card-hint {
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: .5px solid var(--separator);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: 12.5px;
+    color: var(--label-2);
   }
   .card-range {
     font-size: 15px;
@@ -927,10 +944,6 @@
     <section class="rise" style="animation-delay:.02s" aria-labelledby="key-t">
       <div class="sec-head">
         <h2 class="sec-title" id="key-t">전체 키 현황</h2>
-        <button class="sec-link" type="button">
-          상세 보기
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
       </div>
 
       <!-- 전체 합계 — 남녀 카드에서 계산되어 나온다 -->
@@ -961,7 +974,9 @@
 
       <div class="key-cards">
         <button class="key-card" type="button" data-detail="m" style="--c:var(--male)">
-          <span class="card-who">남자 키</span>
+          <span class="card-who">남자 키
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </span>
           <p class="card-range tnum">001 – 200</p>
           <p class="card-total"><span class="num tnum">200</span><span class="unit">개</span></p>
           <ul class="breakdown">
@@ -970,10 +985,16 @@
             <li style="--d:var(--st-broken)"><i></i><span class="l">고장</span><span class="v tnum" id="mBroken">0</span></li>
             <li style="--d:var(--st-etc)"><i></i><span class="l">기타</span><span class="v tnum" id="mEtc">0</span></li>
           </ul>
+          <span class="card-hint">
+            눌러서 상세 보기
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </span>
         </button>
 
         <button class="key-card" type="button" data-detail="f" style="--c:var(--female)">
-          <span class="card-who">여자 키</span>
+          <span class="card-who">여자 키
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </span>
           <p class="card-range tnum">001 – 207</p>
           <p class="card-total"><span class="num tnum">207</span><span class="unit">개</span></p>
           <ul class="breakdown">
@@ -982,6 +1003,10 @@
             <li style="--d:var(--st-broken)"><i></i><span class="l">고장</span><span class="v tnum" id="fBroken">0</span></li>
             <li style="--d:var(--st-etc)"><i></i><span class="l">기타</span><span class="v tnum" id="fEtc">0</span></li>
           </ul>
+          <span class="card-hint">
+            눌러서 상세 보기
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </span>
         </button>
       </div>
 
@@ -1466,6 +1491,13 @@
       card.addEventListener('click', function () { openDetail(card.dataset.detail); });
     });
     detailBack.addEventListener('click', closeDetail);
+
+    /* 아직 만들지 않은 화면은 눌렀을 때 아무 반응이 없으면 고장으로 오해된다 */
+    document.querySelectorAll('.sec-link').forEach(function (link) {
+      link.addEventListener('click', function () {
+        toast('이 화면은 아직 만드는 중입니다');
+      });
+    });
 
     /* ---------- 등록 모달 ---------- */
     var sheet     = document.getElementById('sheet');
