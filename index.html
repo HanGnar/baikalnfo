@@ -276,6 +276,11 @@
     gap: var(--space-10);
   }
 
+  /* 홈 스크롤만 — 떠 있는 탭바 높이(64) + 아래 여백 + 숨 쉴 공간 */
+  .app > .scroll {
+    padding-bottom: calc(64px + var(--space-3) + var(--space-6) + env(safe-area-inset-bottom));
+  }
+
   .hero { padding: var(--space-2) 0 0; }
   .hero-title {
     display: flex;
@@ -523,9 +528,13 @@
   /* ============================================================
      tab-bar — floating 변형 (radius 24 · 1px 보더)
      ============================================================ */
+  /* 콘텐츠 위에 떠 있다 — 스크롤한 내용이 알약 밑으로 흘러 들어가 가려진다 */
   .tabbar {
-    flex: none;
-    margin: 0 var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+    position: absolute;
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+    z-index: 40;
     height: 64px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
