@@ -1048,6 +1048,260 @@
   }
   .viewer-nav button:disabled { opacity: var(--tds-disabled-opacity); }
 
+  /* ============================================================
+     사이드 메뉴
+     ============================================================ */
+  .drawer-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 60;
+    background: var(--tds-bg-overlay);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-slow) var(--ease);
+  }
+  .drawer-scrim.is-open { opacity: 1; pointer-events: auto; }
+
+  .drawer {
+    position: absolute;
+    top: 0; bottom: 0; right: 0;
+    width: min(300px, 80%);
+    z-index: 62;
+    display: flex;
+    flex-direction: column;
+    background: var(--tds-bg-elevated);
+    box-shadow: var(--shadow-3);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    transform: translateX(101%);
+    transition: transform var(--dur-slow) var(--ease-out);
+  }
+  .drawer.is-open { transform: none; }
+
+  .drawer-bar {
+    flex: none;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 var(--space-3);
+  }
+  .drawer-list { padding: var(--space-1) var(--space-3); }
+  .drawer-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 52px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-m);
+    text-align: left;
+  }
+  .drawer-item .label { flex: 1; }
+  .drawer-item .chev { color: var(--grey-400); }
+
+  /* ============================================================
+     관리자에게 연락하기
+     ============================================================ */
+  .chat {
+    position: absolute;
+    inset: 0;
+    z-index: 64;
+    display: flex;
+    flex-direction: column;
+    background: var(--tds-bg-secondary);
+    padding-top: env(safe-area-inset-top);
+    transform: translateX(100%);
+    transition: transform var(--dur-slow) var(--ease-out);
+  }
+  .chat.is-open { transform: none; }
+
+  .chat-bar {
+    flex: none;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-4);
+    background: var(--tds-bg-primary);
+    border-bottom: 1px solid var(--tds-line-default);
+  }
+  .chat-bar .title { flex: 1; }
+
+  .chat-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .chat-empty {
+    margin: auto;
+    text-align: center;
+    color: var(--tds-fg-tertiary);
+  }
+
+  .post {
+    background: var(--tds-bg-primary);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-1);
+  }
+  .post-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .post-media {
+    margin-top: var(--space-3);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: var(--space-2);
+  }
+  .post-media > * {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    padding: 0;
+    border-radius: var(--radius-m);
+    border: 1px solid var(--tds-line-default);
+    background: var(--grey-100);
+    overflow: hidden;
+    display: block;
+  }
+  .post-media img,
+  .post-media video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .post-media .zoom {
+    position: absolute;
+    right: 4px; bottom: 4px;
+    width: 18px; height: 18px;
+    border-radius: var(--radius-xs);
+    background: oklch(0 0 0 / 0.55);
+    color: #FFFFFF;
+    display: grid;
+    place-items: center;
+  }
+  .post-media .play {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: oklch(0 0 0 / 0.26);
+    color: #FFFFFF;
+    pointer-events: none;    /* 재생 버튼은 video 자체가 처리한다 */
+  }
+
+  .post-foot {
+    margin-top: var(--space-3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .post-time {
+    color: var(--tds-fg-tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+  .post-del {
+    flex: none;
+    padding: var(--space-1) var(--space-2);
+    margin-right: calc(var(--space-2) * -1);
+    border-radius: var(--radius-s);
+    color: var(--tds-fg-danger);
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+
+  /* ---------- 입력칸 ---------- */
+  .composer {
+    flex: none;
+    background: var(--tds-bg-primary);
+    border-top: 1px solid var(--tds-line-default);
+    padding: var(--space-3) var(--space-4);
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+  }
+  .composer-strip {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    padding-bottom: var(--space-3);
+  }
+  .composer-strip[hidden] { display: none; }
+  .composer-strip .item {
+    position: relative;
+    flex: none;
+    width: 56px; height: 56px;
+    padding: 0;
+    border-radius: var(--radius-s);
+    border: 1px solid var(--tds-line-default);
+    overflow: hidden;
+  }
+  .composer-strip .item img,
+  .composer-strip .item video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .composer-strip .item .x {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 18px; height: 18px;
+    border-radius: var(--radius-full);
+    background: oklch(0 0 0 / 0.55);
+    color: #FFFFFF;
+    display: grid;
+    place-items: center;
+  }
+
+  .composer-row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+  }
+  .composer-btn {
+    flex: none;
+    width: 40px; height: 40px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-full);
+  }
+  .composer-btn.attach {
+    background: var(--tds-bg-secondary);
+    color: var(--tds-fg-secondary);
+  }
+  .composer-btn.send {
+    background: var(--tds-bg-brand);
+    color: var(--tds-fg-inverse);
+  }
+  .composer-field {
+    flex: 1;
+    min-width: 0;
+    border-radius: var(--radius-l);
+    background: var(--tds-bg-secondary);
+    padding: 9px var(--space-3);
+  }
+  .composer-field textarea {
+    display: block;
+    width: 100%;
+    max-height: 108px;
+    border: 0;
+    background: transparent;
+    resize: none;
+    outline: none;
+    font: inherit;
+    color: var(--tds-fg-primary);
+    overflow-y: auto;
+  }
+  .composer-field textarea::placeholder { color: var(--tds-fg-tertiary); }
+
   /* 메모 */
   .memo-field {
     padding: var(--space-3) var(--space-4);
@@ -1175,7 +1429,7 @@
 
     <span class="nav-title" id="navTitle">서현점</span>
 
-    <button class="icon-btn pressable" type="button" aria-label="메뉴 열기">
+    <button class="icon-btn pressable" type="button" id="menuBtn" aria-label="메뉴 열기">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
   </header>
@@ -1427,12 +1681,56 @@
   <div class="dialog-scrim" id="dlgScrim"></div>
   <div class="dialog" id="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlgTitle">
     <p class="t-title1" id="dlgTitle">이 사진을 지울까요?</p>
-    <p class="body t-body2">지운 사진은 되돌릴 수 없어요.</p>
+    <p class="body t-body2" id="dlgBody">지운 사진은 되돌릴 수 없어요.</p>
     <div class="dialog-actions">
       <button class="dlg-btn danger pressable" type="button" id="dlgYes">예</button>
       <button class="dlg-btn secondary pressable" type="button" id="dlgNo">아니요</button>
     </div>
   </div>
+
+  <!-- ============ 사이드 메뉴 ============ -->
+  <div class="drawer-scrim" id="drawerScrim"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-bar">
+      <button class="icon-btn pressable" type="button" id="drawerClose" aria-label="메뉴 닫기">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <nav class="drawer-list">
+      <button class="drawer-item pressable" type="button" id="openChat">
+        <span class="label t-body1">관리자에게 연락하기</span>
+        <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- ============ 관리자에게 연락하기 ============ -->
+  <section class="chat" id="chat" aria-hidden="true">
+    <div class="chat-bar">
+      <button class="back pressable" type="button" id="chatBack" aria-label="뒤로">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <span class="title t-h4">관리자에게 연락하기</span>
+    </div>
+
+    <div class="chat-body" id="chatBody"></div>
+
+    <div class="composer">
+      <div class="composer-strip" id="chatStrip" hidden></div>
+      <div class="composer-row">
+        <button class="composer-btn attach pressable" type="button" id="chatAttach" aria-label="사진·영상 첨부">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <input type="file" id="chatInput" accept="image/*,video/*" multiple hidden>
+        <div class="composer-field">
+          <textarea id="chatText" rows="1" placeholder="전할 내용을 적어주세요" aria-label="보낼 내용"></textarea>
+        </div>
+        <button class="composer-btn send pressable" type="button" id="chatSend" aria-label="남기기">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
 
   <!-- ============ 사진 크게 보기 ============ -->
   <div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="사진 크게 보기" aria-hidden="true">
@@ -1909,29 +2207,38 @@
       if (viewIdx < viewList.length - 1) { viewIdx++; showPhoto(); }
     });
 
-    /* ---------- 삭제 확인 ---------- */
-    var dlg = document.getElementById('dlg');
+    /* ---------- 삭제 확인 (여러 화면이 같이 쓴다) ---------- */
+    var dlg      = document.getElementById('dlg');
     var dlgScrim = document.getElementById('dlgScrim');
-    var pendingIndex = null;
+    var dlgTitle = document.getElementById('dlgTitle');
+    var dlgBody  = document.getElementById('dlgBody');
+    var dlgYesFn = null;
 
-    function askDelete(i) {
-      pendingIndex = i;
+    function confirmDialog(title, body, onYes) {
+      dlgTitle.textContent = title;
+      dlgBody.textContent  = body;
+      dlgYesFn = onYes;
       dlgScrim.classList.add('is-open');
       dlg.classList.add('is-open');
     }
     function closeDialog() {
       dlgScrim.classList.remove('is-open');
       dlg.classList.remove('is-open');
-      pendingIndex = null;
+      dlgYesFn = null;
+    }
+
+    function askDelete(i) {
+      confirmDialog('이 사진을 지울까요?', '지운 사진은 되돌릴 수 없어요.', function () {
+        draft.photos.splice(i, 1);
+        renderPhotos();
+        toast('사진을 지웠어요');
+      });
     }
 
     document.getElementById('dlgYes').addEventListener('click', function () {
-      if (pendingIndex !== null) {
-        draft.photos.splice(pendingIndex, 1);
-        renderPhotos();
-        toast('사진을 지웠어요');
-      }
+      var run = dlgYesFn;
       closeDialog();
+      if (run) run();
     });
     document.getElementById('dlgNo').addEventListener('click', closeDialog);
     dlgScrim.addEventListener('click', closeDialog);
@@ -1970,9 +2277,14 @@
     openBtn.addEventListener('click', function () { openSheet(); });
     closeBtn.addEventListener('click', closeSheet);
     scrim.addEventListener('click', closeSheet);
+    /* 위에 덮인 것부터 차례로 닫는다 */
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
-      if (sheet.classList.contains('is-open')) closeSheet();
+      if (dlg.classList.contains('is-open')) closeDialog();
+      else if (viewer.classList.contains('is-open')) closeViewer();
+      else if (sheet.classList.contains('is-open')) closeSheet();
+      else if (chat.classList.contains('is-open')) closeChatScreen();
+      else if (drawer.classList.contains('is-open')) closeDrawer();
       else if (detail.classList.contains('is-open')) closeDetail();
     });
 
@@ -2026,6 +2338,272 @@
         toast('저장 공간이 가득 찼어요. 사진을 줄여주세요');
       }
     });
+
+    /* ==========================================================
+       사이드 메뉴
+       ========================================================== */
+    var drawer      = document.getElementById('drawer');
+    var drawerScrim = document.getElementById('drawerScrim');
+
+    function openDrawer() {
+      drawer.classList.add('is-open');
+      drawerScrim.classList.add('is-open');
+      drawer.setAttribute('aria-hidden', 'false');
+    }
+    function closeDrawer() {
+      drawer.classList.remove('is-open');
+      drawerScrim.classList.remove('is-open');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
+
+    document.getElementById('menuBtn').addEventListener('click', openDrawer);
+    document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+    drawerScrim.addEventListener('click', closeDrawer);
+
+    /* ==========================================================
+       관리자에게 연락하기
+
+       사진·영상은 localStorage(5MB) 에 넣을 수 없다. 영상 한 편이
+       그 한도를 통째로 넘긴다. 그래서 이 화면만 IndexedDB 에
+       파일 원본(Blob) 그대로 담는다.
+       ========================================================== */
+    var chat      = document.getElementById('chat');
+    var chatBody  = document.getElementById('chatBody');
+    var chatText  = document.getElementById('chatText');
+    var chatInput = document.getElementById('chatInput');
+    var chatStrip = document.getElementById('chatStrip');
+
+    var CDB = 'baikal.contact';
+    var attachments = [];   /* 남기기 전에 담아둔 첨부 */
+    var liveUrls = [];      /* 화면에 띄운 blob 주소 — 다시 그릴 때 반납한다 */
+
+    var XMARK = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" ' +
+                'stroke="currentColor" stroke-width="3" stroke-linecap="round" ' +
+                'aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+
+    function withStore(mode, run) {
+      var req = indexedDB.open(CDB, 1);
+      req.onupgradeneeded = function () {
+        req.result.createObjectStore('posts', { keyPath: 'id' });
+      };
+      req.onsuccess = function () {
+        run(req.result.transaction('posts', mode).objectStore('posts'));
+      };
+      req.onerror = function () { toast('저장소를 열지 못했어요'); };
+    }
+
+    function fmtWhen(iso) {
+      var d = new Date(iso);
+      var h = d.getHours();
+      return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' +
+             (h < 12 ? '오전 ' : '오후 ') + (h % 12 || 12) +
+             ':' + ('0' + d.getMinutes()).slice(-2);
+    }
+
+    function freeUrls() {
+      liveUrls.forEach(function (u) { URL.revokeObjectURL(u); });
+      liveUrls = [];
+    }
+
+    function renderChat() {
+      withStore('readonly', function (st) {
+        var req = st.getAll();
+        req.onsuccess = function () {
+          drawPosts(req.result.slice().sort(function (a, b) { return a.id - b.id; }));
+        };
+        req.onerror = function () { toast('불러오지 못했어요'); };
+      });
+    }
+
+    function drawPosts(list) {
+      freeUrls();
+
+      if (!list.length) {
+        chatBody.innerHTML = '<p class="chat-empty t-body2">아직 남긴 내용이 없어요.<br>' +
+                             '전할 말을 적어서 남겨주세요.</p>';
+        return;
+      }
+
+      var shotsOf = {};   /* 크게 보기용 — 글마다 사진 주소 묶음 */
+      var html = '';
+
+      list.forEach(function (p) {
+        var shots = [];
+        var media = '';
+
+        (p.files || []).forEach(function (f) {
+          var url = URL.createObjectURL(f.blob);
+          liveUrls.push(url);
+
+          if (f.kind === 'video') {
+            media += '<span><video src="' + url + '" controls playsinline ' +
+                     'preload="metadata"></video></span>';
+          } else {
+            media += '<button class="pressable" type="button" ' +
+                       'data-shot="' + p.id + ':' + shots.length + '" ' +
+                       'aria-label="사진 크게 보기">' +
+                       '<img src="' + url + '" alt="">' +
+                       '<span class="zoom">' + ZOOM + '</span>' +
+                     '</button>';
+            shots.push(url);
+          }
+        });
+        shotsOf[p.id] = shots;
+
+        html += '<article class="post">' +
+                  (p.text ? '<p class="post-text t-body1">' + esc(p.text) + '</p>' : '') +
+                  (media ? '<div class="post-media">' + media + '</div>' : '') +
+                  '<div class="post-foot">' +
+                    '<span class="post-time t-caption">' + fmtWhen(p.at) + '</span>' +
+                    '<button class="post-del pressable" type="button" ' +
+                      'data-del="' + p.id + '">삭제</button>' +
+                  '</div>' +
+                '</article>';
+      });
+
+      chatBody.innerHTML = html;
+
+      chatBody.querySelectorAll('[data-shot]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var q = b.dataset.shot.split(':');
+          openViewer(shotsOf[q[0]], parseInt(q[1], 10));
+        });
+      });
+
+      chatBody.querySelectorAll('[data-del]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var id = parseInt(b.dataset.del, 10);
+          confirmDialog('이 글을 지울까요?', '지운 글은 되돌릴 수 없어요.', function () {
+            withStore('readwrite', function (st) {
+              st.delete(id).onsuccess = function () {
+                renderChat();
+                toast('글을 지웠어요');
+              };
+            });
+          });
+        });
+      });
+
+      chatBody.scrollTop = chatBody.scrollHeight;   /* 최근 글이 보이게 */
+    }
+
+    /* ---------- 첨부 ---------- */
+    function renderStrip() {
+      chatStrip.hidden = attachments.length === 0;
+      chatStrip.innerHTML = attachments.map(function (a, i) {
+        return '<button class="item pressable" type="button" data-drop="' + i + '" ' +
+                 'aria-label="첨부 ' + (i + 1) + ' 빼기">' +
+                 (a.kind === 'video'
+                   ? '<video src="' + a.url + '" preload="metadata" muted playsinline></video>'
+                   : '<img src="' + a.url + '" alt="">') +
+                 '<span class="x">' + XMARK + '</span>' +
+               '</button>';
+      }).join('');
+
+      chatStrip.querySelectorAll('[data-drop]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var i = parseInt(b.dataset.drop, 10);
+          URL.revokeObjectURL(attachments[i].url);
+          attachments.splice(i, 1);
+          renderStrip();
+        });
+      });
+    }
+
+    /* 사진은 줄여서 담는다. 영상은 손대면 화질이 망가져서 원본 그대로 둔다. */
+    function toSmallBlob(file, done) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var max = 1600, w = img.width, h = img.height;
+        if (w > max || h > max) {
+          var r = Math.min(max / w, max / h);
+          w = Math.round(w * r);
+          h = Math.round(h * r);
+        }
+        var cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        cv.toBlob(function (b) { done(b || file); }, 'image/jpeg', 0.75);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); done(file); };
+      img.src = url;
+    }
+
+    document.getElementById('chatAttach').addEventListener('click', function () {
+      chatInput.click();
+    });
+
+    chatInput.addEventListener('change', function () {
+      var files = Array.prototype.slice.call(chatInput.files);
+      if (!files.length) return;
+      var left = files.length;
+
+      files.forEach(function (file) {
+        var isVideo = file.type.indexOf('video/') === 0;
+        function add(blob) {
+          attachments.push({
+            kind: isVideo ? 'video' : 'image',
+            blob: blob,
+            url: URL.createObjectURL(blob)
+          });
+          if (--left === 0) { renderStrip(); chatInput.value = ''; }
+        }
+        if (isVideo) add(file);
+        else toSmallBlob(file, add);
+      });
+    });
+
+    /* ---------- 남기기 ---------- */
+    chatText.addEventListener('input', function () {
+      chatText.style.height = 'auto';
+      chatText.style.height = Math.min(chatText.scrollHeight, 108) + 'px';
+    });
+
+    document.getElementById('chatSend').addEventListener('click', function () {
+      var text = chatText.value.trim();
+      if (!text && !attachments.length) {
+        toast('내용을 적거나 사진을 넣어주세요');
+        return;
+      }
+
+      var post = {
+        id: Date.now(),
+        text: text,
+        at: new Date().toISOString(),
+        files: attachments.map(function (a) { return { kind: a.kind, blob: a.blob }; })
+      };
+
+      withStore('readwrite', function (st) {
+        var r = st.add(post);
+        r.onsuccess = function () {
+          attachments.forEach(function (a) { URL.revokeObjectURL(a.url); });
+          attachments = [];
+          chatText.value = '';
+          chatText.style.height = '';
+          renderStrip();
+          renderChat();
+          toast('남겼어요');
+        };
+        r.onerror = function () { toast('저장하지 못했어요. 파일이 너무 클 수 있어요'); };
+      });
+    });
+
+    function openChatScreen() {
+      closeDrawer();
+      chat.classList.add('is-open');
+      chat.setAttribute('aria-hidden', 'false');
+      renderChat();
+    }
+    function closeChatScreen() {
+      chat.classList.remove('is-open');
+      chat.setAttribute('aria-hidden', 'true');
+      chatText.blur();
+    }
+
+    document.getElementById('openChat').addEventListener('click', openChatScreen);
+    document.getElementById('chatBack').addEventListener('click', closeChatScreen);
 
     render();
   })();
