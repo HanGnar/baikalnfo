@@ -839,6 +839,113 @@
   .pick button[aria-pressed="true"] .check { opacity: 1; }
   .pick button[aria-pressed="true"] .name { font-weight: 600; }
 
+  /* 사진 */
+  .photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .photo-add {
+    width: 76px; height: 76px;
+    border-radius: var(--radius-m);
+    background: var(--tds-bg-secondary);
+    border: 1px solid var(--tds-line-default);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: var(--tds-fg-tertiary);
+    font-size: 11px;
+    line-height: 1.4;
+    font-weight: 500;
+  }
+  .photo-thumb {
+    position: relative;
+    width: 76px; height: 76px;
+    padding: 0;
+    border-radius: var(--radius-m);
+    border: 1px solid var(--tds-line-default);
+    overflow: hidden;
+  }
+  .photo-thumb img {
+    display: block;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .photo-thumb .x {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 20px; height: 20px;
+    border-radius: var(--radius-full);
+    background: oklch(0 0 0 / 0.55);
+    color: #fff;
+    display: grid;
+    place-items: center;
+  }
+
+  /* dialog — 흰 표면 · radius 20 · 24px padding · shadow-3 */
+  .dialog-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    background: var(--tds-bg-overlay);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-base) var(--ease);
+  }
+  .dialog-scrim.is-open { opacity: 1; pointer-events: auto; }
+
+  .dialog {
+    position: absolute;
+    left: var(--space-6); right: var(--space-6);
+    top: 50%;
+    z-index: 105;
+    padding: var(--space-6);
+    border-radius: var(--radius-2xl);
+    background: var(--tds-bg-elevated);
+    box-shadow: var(--shadow-3);
+    text-align: center;
+    opacity: 0;
+    transform: translateY(-50%) scale(0.96);
+    pointer-events: none;
+    transition: opacity var(--dur-base) var(--ease),
+                transform var(--dur-base) var(--ease);
+  }
+  .dialog.is-open { opacity: 1; transform: translateY(-50%) scale(1); pointer-events: auto; }
+
+  .dialog .body { margin-top: var(--space-2); color: var(--tds-fg-secondary); }
+  .dialog-actions {
+    margin-top: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .dlg-btn {
+    height: 48px;
+    border-radius: var(--radius-l);
+    font-size: 17px;
+    line-height: 1.25;
+    letter-spacing: -0.005em;
+    font-weight: 700;
+  }
+  .dlg-btn.danger { background: var(--tds-bg-danger); color: var(--tds-fg-inverse); }
+  .dlg-btn.secondary { background: var(--tds-bg-secondary); color: var(--tds-fg-primary); }
+
+  /* 상세 목록의 사진 */
+  .row-photos {
+    display: flex;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+  }
+  .row-photos img {
+    width: 44px; height: 44px;
+    border-radius: var(--radius-s);
+    border: 1px solid var(--tds-line-default);
+    object-fit: cover;
+    display: block;
+  }
+
   /* 메모 */
   .memo-field {
     padding: var(--space-3) var(--space-4);
@@ -912,7 +1019,7 @@
     position: absolute;
     left: var(--space-4); right: var(--space-4);
     bottom: calc(88px + env(safe-area-inset-bottom));
-    z-index: 90;
+    z-index: 120;   /* 다이얼로그(105)보다 위 — 닫히는 순간에도 가려지지 않게 */
     padding: var(--space-4);
     border-radius: var(--radius-l);
     background: var(--grey-900);
@@ -1192,6 +1299,13 @@
       </div>
 
       <div>
+        <p class="field-label">사진<span class="optional">선택</span></p>
+        <div class="photos" id="photoList"></div>
+        <input type="file" id="photoInput" accept="image/*" multiple hidden>
+        <p class="memo-count"><span id="photoCount">0</span> / 5</p>
+      </div>
+
+      <div>
         <p class="field-label">메모<span class="optional">선택</span></p>
         <div class="memo-field">
           <textarea id="memoInput" rows="1" maxlength="100"
@@ -1204,6 +1318,17 @@
 
     <div class="sheet-cta">
       <button class="btn-cta pressable" type="button" id="submitBtn" disabled>등록하기</button>
+    </div>
+  </div>
+
+  <!-- ============ 사진 삭제 확인 ============ -->
+  <div class="dialog-scrim" id="dlgScrim"></div>
+  <div class="dialog" id="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <p class="t-title1" id="dlgTitle">이 사진을 지울까요?</p>
+    <p class="body t-body2">지운 사진은 되돌릴 수 없어요.</p>
+    <div class="dialog-actions">
+      <button class="dlg-btn danger pressable" type="button" id="dlgYes">예</button>
+      <button class="dlg-btn secondary pressable" type="button" id="dlgNo">아니요</button>
     </div>
   </div>
 
@@ -1278,8 +1403,10 @@
       });
     });
 
+    /* 사진이 들어가면 용량이 커진다 — 저장 실패 여부를 돌려준다 */
     function persist() {
-      try { localStorage.setItem(STORE, JSON.stringify(data)); } catch (e) {}
+      try { localStorage.setItem(STORE, JSON.stringify(data)); return true; }
+      catch (e) { return false; }
     }
 
     function countOf(g) {
@@ -1335,7 +1462,11 @@
 
       var byStatus = { lost: [], broken: [], etc: [] };
       Object.keys(ex).forEach(function (no) {
-        byStatus[ex[no].s].push({ no: parseInt(no, 10), memo: ex[no].memo || '' });
+        byStatus[ex[no].s].push({
+          no: parseInt(no, 10),
+          memo: ex[no].memo || '',
+          photos: ex[no].photos || []
+        });
       });
       Object.keys(byStatus).forEach(function (k) {
         byStatus[k].sort(function (a, b) { return a.no - b.no; });
@@ -1374,6 +1505,11 @@
                      '<span class="row-body">' +
                        '<span class="row-title">' + pad(it.no) + '번</span>' +
                        (it.memo ? '<span class="row-sub wrap">' + esc(it.memo) + '</span>' : '') +
+                       (it.photos.length
+                         ? '<span class="row-photos">' + it.photos.map(function (src) {
+                             return '<img src="' + src + '" alt="">';
+                           }).join('') + '</span>'
+                         : '') +
                      '</span>' + CHEV +
                    '</button>';
           }).join('') + '</div>';
@@ -1459,9 +1595,13 @@
     var pick      = document.getElementById('statusPick');
     var memoInput = document.getElementById('memoInput');
     var memoCount = document.getElementById('memoCount');
+    var photoList = document.getElementById('photoList');
+    var photoInput = document.getElementById('photoInput');
+    var photoCount = document.getElementById('photoCount');
     var toastEl   = document.getElementById('toast');
 
-    var draft = { g: 'm', no: null, s: null };
+    var MAX_PHOTOS = 5;
+    var draft = { g: 'm', no: null, s: null, photos: [] };
     var toastTimer;
 
     function toast(msg) {
@@ -1506,14 +1646,117 @@
       memoInput.style.height = memoInput.scrollHeight + 'px';
     }
 
+    /* ---------- 사진 ---------- */
+    var ADD_BTN =
+      '<button class="photo-add pressable" type="button" id="photoAdd">' +
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M12 6v12M6 12h12"/></svg>추가</button>';
+
+    function renderPhotos() {
+      var html = draft.photos.map(function (src, i) {
+        return '<button class="photo-thumb" type="button" data-photo="' + i + '" aria-label="사진 ' + (i + 1) + ' 지우기">' +
+                 '<img src="' + src + '" alt="">' +
+                 '<span class="x">' +
+                   '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+                   'stroke-width="3.2" stroke-linecap="round" aria-hidden="true">' +
+                   '<path d="M6 6l12 12M18 6L6 18"/></svg>' +
+                 '</span>' +
+               '</button>';
+      }).join('');
+
+      if (draft.photos.length < MAX_PHOTOS) html += ADD_BTN;
+      photoList.innerHTML = html;
+      photoCount.textContent = draft.photos.length;
+
+      var add = document.getElementById('photoAdd');
+      if (add) add.addEventListener('click', function () { photoInput.click(); });
+
+      photoList.querySelectorAll('[data-photo]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          askDelete(parseInt(btn.dataset.photo, 10));
+        });
+      });
+    }
+
+    /* 원본 그대로 저장하면 저장 공간이 금방 찬다 — 1024px·품질 0.7로 줄인다 */
+    function shrink(file, done) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var max = 1024, w = img.width, h = img.height;
+          if (w > max || h > max) {
+            var r = Math.min(max / w, max / h);
+            w = Math.round(w * r);
+            h = Math.round(h * r);
+          }
+          var cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          done(cv.toDataURL('image/jpeg', 0.7));
+        };
+        img.onerror = function () { done(null); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function () { done(null); };
+      reader.readAsDataURL(file);
+    }
+
+    photoInput.addEventListener('change', function () {
+      var files = Array.prototype.slice.call(photoInput.files || []);
+      var room = MAX_PHOTOS - draft.photos.length;
+      if (files.length > room) {
+        toast('사진은 최대 ' + MAX_PHOTOS + '장까지 넣을 수 있어요');
+        files = files.slice(0, room);
+      }
+      var left = files.length;
+      if (!left) { photoInput.value = ''; return; }
+
+      files.forEach(function (f) {
+        shrink(f, function (src) {
+          if (src) draft.photos.push(src);
+          if (--left === 0) { renderPhotos(); photoInput.value = ''; }
+        });
+      });
+    });
+
+    /* ---------- 삭제 확인 ---------- */
+    var dlg = document.getElementById('dlg');
+    var dlgScrim = document.getElementById('dlgScrim');
+    var pendingIndex = null;
+
+    function askDelete(i) {
+      pendingIndex = i;
+      dlgScrim.classList.add('is-open');
+      dlg.classList.add('is-open');
+    }
+    function closeDialog() {
+      dlgScrim.classList.remove('is-open');
+      dlg.classList.remove('is-open');
+      pendingIndex = null;
+    }
+
+    document.getElementById('dlgYes').addEventListener('click', function () {
+      if (pendingIndex !== null) {
+        draft.photos.splice(pendingIndex, 1);
+        renderPhotos();
+        toast('사진을 지웠어요');
+      }
+      closeDialog();
+    });
+    document.getElementById('dlgNo').addEventListener('click', closeDialog);
+    dlgScrim.addEventListener('click', closeDialog);
+
     function openSheet(presetG, presetNo) {
-      draft = { g: presetG || 'm', no: null, s: null };
+      draft = { g: presetG || 'm', no: null, s: null, photos: [] };
       noInput.value = presetNo ? String(presetNo) : '';
       memoInput.value = '';
       memoInput.style.height = '';
       memoCount.textContent = '0';
+      photoInput.value = '';
       noError.classList.remove('is-on');
-      syncGender(); syncStatus(); validate();
+      syncGender(); syncStatus(); validate(); renderPhotos();
       scrim.classList.add('is-open');
       sheet.classList.add('is-open');
     }
@@ -1564,18 +1807,24 @@
       if (submitBtn.disabled) return;
       var g = draft.g, no = draft.no, s = draft.s;
       var memo = memoInput.value.trim();
+      var photos = draft.photos.slice();
 
       if (s === 'ok') delete data[g][no];
-      else data[g][no] = { s: s, memo: memo };
+      else data[g][no] = { s: s, memo: memo, photos: photos };
 
       data.log.unshift({ g: g, no: no, s: s, memo: memo, at: new Date().toISOString() });
       data.log = data.log.slice(0, 30);
 
-      persist();
+      var saved = persist();
       render();
       if (detailG) renderDetail(detailG);
       closeSheet();
-      toast(GENDER[g] + ' ' + pad(no) + '번을 ' + STATUS[s] + '으로 등록했어요');
+
+      if (saved) {
+        toast(GENDER[g] + ' ' + pad(no) + '번을 ' + STATUS[s] + '으로 등록했어요');
+      } else {
+        toast('저장 공간이 가득 찼어요. 사진을 줄여주세요');
+      }
     });
 
     render();
