@@ -1103,7 +1103,7 @@
   /* ============================================================
      관리자에게 연락하기
      ============================================================ */
-  .chat {
+  .board {
     position: absolute;
     inset: 0;
     z-index: 64;
@@ -1114,9 +1114,9 @@
     transform: translateX(100%);
     transition: transform var(--dur-slow) var(--ease-out);
   }
-  .chat.is-open { transform: none; }
+  .board.is-open { transform: none; }
 
-  .chat-bar {
+  .board-bar {
     flex: none;
     height: 56px;
     display: flex;
@@ -1126,9 +1126,9 @@
     background: var(--tds-bg-primary);
     border-bottom: 1px solid var(--tds-line-default);
   }
-  .chat-bar .title { flex: 1; }
+  .board-bar .title { flex: 1; }
 
-  .chat-body {
+  .board-body {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -1138,7 +1138,7 @@
     flex-direction: column;
     gap: var(--space-3);
   }
-  .chat-empty {
+  .board-empty {
     margin: auto;
     text-align: center;
     color: var(--tds-fg-tertiary);
@@ -1171,8 +1171,7 @@
     overflow: hidden;
     display: block;
   }
-  .post-media img,
-  .post-media video {
+  .post-media img {
     width: 100%; height: 100%;
     object-fit: cover;
     display: block;
@@ -1186,15 +1185,6 @@
     color: #FFFFFF;
     display: grid;
     place-items: center;
-  }
-  .post-media .play {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    background: oklch(0 0 0 / 0.26);
-    color: #FFFFFF;
-    pointer-events: none;    /* 재생 버튼은 video 자체가 처리한다 */
   }
 
   .post-foot {
@@ -1219,88 +1209,33 @@
     font-weight: 600;
   }
 
-  /* ---------- 입력칸 ---------- */
-  .composer {
+  .board-cta {
     flex: none;
     background: var(--tds-bg-primary);
     border-top: 1px solid var(--tds-line-default);
     padding: var(--space-3) var(--space-4);
     padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
   }
-  .composer-strip {
-    display: flex;
-    gap: var(--space-2);
-    overflow-x: auto;
-    padding-bottom: var(--space-3);
-  }
-  .composer-strip[hidden] { display: none; }
-  .composer-strip .item {
-    position: relative;
-    flex: none;
-    width: 56px; height: 56px;
-    padding: 0;
-    border-radius: var(--radius-s);
-    border: 1px solid var(--tds-line-default);
-    overflow: hidden;
-  }
-  .composer-strip .item img,
-  .composer-strip .item video {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .composer-strip .item .x {
-    position: absolute;
-    top: 2px; right: 2px;
-    width: 18px; height: 18px;
-    border-radius: var(--radius-full);
-    background: oklch(0 0 0 / 0.55);
-    color: #FFFFFF;
-    display: grid;
-    place-items: center;
-  }
 
-  .composer-row {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--space-2);
-  }
-  .composer-btn {
-    flex: none;
-    width: 40px; height: 40px;
-    padding: 0;
-    display: grid;
-    place-items: center;
-    border-radius: var(--radius-full);
-  }
-  .composer-btn.attach {
-    background: var(--tds-bg-secondary);
-    color: var(--tds-fg-secondary);
-  }
-  .composer-btn.send {
-    background: var(--tds-bg-brand);
-    color: var(--tds-fg-inverse);
-  }
-  .composer-field {
-    flex: 1;
-    min-width: 0;
+  /* 글 쓰는 칸 — 등록 시트의 메모 칸보다 넉넉하게 */
+  .post-field {
     border-radius: var(--radius-l);
     background: var(--tds-bg-secondary);
-    padding: 9px var(--space-3);
+    padding: var(--space-3);
   }
-  .composer-field textarea {
+  .post-field textarea {
     display: block;
     width: 100%;
-    max-height: 108px;
+    min-height: 92px;
     border: 0;
     background: transparent;
     resize: none;
     outline: none;
     font: inherit;
+    line-height: 1.5;
     color: var(--tds-fg-primary);
-    overflow-y: auto;
   }
-  .composer-field textarea::placeholder { color: var(--tds-fg-tertiary); }
+  .post-field textarea::placeholder { color: var(--tds-fg-tertiary); }
 
   /* 메모 */
   .memo-field {
@@ -1704,33 +1639,52 @@
     </nav>
   </aside>
 
-  <!-- ============ 관리자에게 연락하기 ============ -->
-  <section class="chat" id="chat" aria-hidden="true">
-    <div class="chat-bar">
-      <button class="back pressable" type="button" id="chatBack" aria-label="뒤로">
+  <!-- ============ 관리자에게 연락하기 (게시판) ============ -->
+  <section class="board" id="board" aria-hidden="true">
+    <div class="board-bar">
+      <button class="back pressable" type="button" id="boardBack" aria-label="뒤로">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
       </button>
       <span class="title t-h4">관리자에게 연락하기</span>
     </div>
 
-    <div class="chat-body" id="chatBody"></div>
+    <div class="board-body" id="boardBody"></div>
 
-    <div class="composer">
-      <div class="composer-strip" id="chatStrip" hidden></div>
-      <div class="composer-row">
-        <button class="composer-btn attach pressable" type="button" id="chatAttach" aria-label="사진·영상 첨부">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        </button>
-        <input type="file" id="chatInput" accept="image/*,video/*" multiple hidden>
-        <div class="composer-field">
-          <textarea id="chatText" rows="1" placeholder="전할 내용을 적어주세요" aria-label="보낼 내용"></textarea>
-        </div>
-        <button class="composer-btn send pressable" type="button" id="chatSend" aria-label="남기기">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M12 5l7 7-7 7"/></svg>
-        </button>
-      </div>
+    <div class="board-cta">
+      <button class="btn-cta pressable" type="button" id="openPost">글 남기기</button>
     </div>
   </section>
+
+  <!-- ============ 글 남기기 시트 ============ -->
+  <div class="scrim" id="postScrim"></div>
+  <div class="sheet" id="postSheet" role="dialog" aria-modal="true" aria-labelledby="postSheetTitle">
+    <div class="sheet-bar">
+      <span class="title t-h3" id="postSheetTitle">글 남기기</span>
+      <button class="sheet-close pressable" type="button" id="postClose" aria-label="닫기">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="sheet-body">
+      <div>
+        <p class="field-label">내용</p>
+        <div class="post-field">
+          <textarea id="postText" placeholder="예) 남자 87번 키 고장났습니다. 확인 부탁드려요" aria-label="남길 내용"></textarea>
+        </div>
+      </div>
+
+      <div>
+        <p class="field-label">사진<span class="optional">선택</span></p>
+        <div class="photos" id="postPhotos"></div>
+        <input type="file" id="postInput" accept="image/*" multiple hidden>
+        <p class="memo-count"><span id="postPhotoCount">0</span> / 5</p>
+      </div>
+    </div>
+
+    <div class="sheet-cta">
+      <button class="btn-cta pressable" type="button" id="postSubmit" disabled>남기기</button>
+    </div>
+  </div>
 
   <!-- ============ 사진 크게 보기 ============ -->
   <div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="사진 크게 보기" aria-hidden="true">
@@ -2282,8 +2236,9 @@
       if (e.key !== 'Escape') return;
       if (dlg.classList.contains('is-open')) closeDialog();
       else if (viewer.classList.contains('is-open')) closeViewer();
+      else if (postSheet.classList.contains('is-open')) closePostSheet();
       else if (sheet.classList.contains('is-open')) closeSheet();
-      else if (chat.classList.contains('is-open')) closeChatScreen();
+      else if (board.classList.contains('is-open')) closeBoard();
       else if (drawer.classList.contains('is-open')) closeDrawer();
       else if (detail.classList.contains('is-open')) closeDetail();
     });
@@ -2361,25 +2316,36 @@
     drawerScrim.addEventListener('click', closeDrawer);
 
     /* ==========================================================
-       관리자에게 연락하기
+       관리자에게 연락하기 — 게시판
 
-       사진·영상은 localStorage(5MB) 에 넣을 수 없다. 영상 한 편이
-       그 한도를 통째로 넘긴다. 그래서 이 화면만 IndexedDB 에
-       파일 원본(Blob) 그대로 담는다.
+       사진은 줄여도 여러 장이면 localStorage(5MB) 를 금방 넘긴다.
+       키 관리 데이터와 자리를 다투지 않도록 이 화면만 IndexedDB 에
+       사진을 파일 그대로(Blob) 담는다.
        ========================================================== */
-    var chat      = document.getElementById('chat');
-    var chatBody  = document.getElementById('chatBody');
-    var chatText  = document.getElementById('chatText');
-    var chatInput = document.getElementById('chatInput');
-    var chatStrip = document.getElementById('chatStrip');
+    var board     = document.getElementById('board');
+    var boardBody = document.getElementById('boardBody');
+
+    var postSheet  = document.getElementById('postSheet');
+    var postScrim  = document.getElementById('postScrim');
+    var postText   = document.getElementById('postText');
+    var postPhotos = document.getElementById('postPhotos');
+    var postInput  = document.getElementById('postInput');
+    var postCount  = document.getElementById('postPhotoCount');
+    var postSubmit = document.getElementById('postSubmit');
 
     var CDB = 'baikal.contact';
-    var attachments = [];   /* 남기기 전에 담아둔 첨부 */
-    var liveUrls = [];      /* 화면에 띄운 blob 주소 — 다시 그릴 때 반납한다 */
+    var postDraft = { photos: [] };   /* 남기기 전에 담아둔 사진 */
+    var liveUrls = [];                /* 목록에 띄운 blob 주소 — 다시 그릴 때 반납한다 */
 
     var XMARK = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" ' +
-                'stroke="currentColor" stroke-width="3" stroke-linecap="round" ' +
-                'aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+                'stroke="currentColor" stroke-width="3.2" stroke-linecap="round" ' +
+                'aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+    var POST_ADD =
+      '<button class="photo-add pressable" type="button" id="postPhotoAdd">' +
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M12 6v12M6 12h12"/></svg>추가</button>';
 
     function withStore(mode, run) {
       var req = indexedDB.open(CDB, 1);
@@ -2400,27 +2366,25 @@
              ':' + ('0' + d.getMinutes()).slice(-2);
     }
 
-    function freeUrls() {
-      liveUrls.forEach(function (u) { URL.revokeObjectURL(u); });
-      liveUrls = [];
-    }
-
-    function renderChat() {
+    /* ---------- 목록 ---------- */
+    function renderBoard() {
       withStore('readonly', function (st) {
         var req = st.getAll();
         req.onsuccess = function () {
-          drawPosts(req.result.slice().sort(function (a, b) { return a.id - b.id; }));
+          /* 최근 글이 맨 위 */
+          drawPosts(req.result.slice().sort(function (a, b) { return b.id - a.id; }));
         };
         req.onerror = function () { toast('불러오지 못했어요'); };
       });
     }
 
     function drawPosts(list) {
-      freeUrls();
+      liveUrls.forEach(function (u) { URL.revokeObjectURL(u); });
+      liveUrls = [];
 
       if (!list.length) {
-        chatBody.innerHTML = '<p class="chat-empty t-body2">아직 남긴 내용이 없어요.<br>' +
-                             '전할 말을 적어서 남겨주세요.</p>';
+        boardBody.innerHTML = '<p class="board-empty t-body2">아직 올라온 글이 없어요.<br>' +
+                              '아래에서 첫 글을 남겨보세요.</p>';
         return;
       }
 
@@ -2429,25 +2393,16 @@
 
       list.forEach(function (p) {
         var shots = [];
-        var media = '';
-
-        (p.files || []).forEach(function (f) {
-          var url = URL.createObjectURL(f.blob);
+        var media = (p.photos || []).map(function (blob, i) {
+          var url = URL.createObjectURL(blob);
           liveUrls.push(url);
-
-          if (f.kind === 'video') {
-            media += '<span><video src="' + url + '" controls playsinline ' +
-                     'preload="metadata"></video></span>';
-          } else {
-            media += '<button class="pressable" type="button" ' +
-                       'data-shot="' + p.id + ':' + shots.length + '" ' +
-                       'aria-label="사진 크게 보기">' +
-                       '<img src="' + url + '" alt="">' +
-                       '<span class="zoom">' + ZOOM + '</span>' +
-                     '</button>';
-            shots.push(url);
-          }
-        });
+          shots.push(url);
+          return '<button class="pressable" type="button" ' +
+                   'data-shot="' + p.id + ':' + i + '" aria-label="사진 크게 보기">' +
+                   '<img src="' + url + '" alt="">' +
+                   '<span class="zoom">' + ZOOM + '</span>' +
+                 '</button>';
+        }).join('');
         shotsOf[p.id] = shots;
 
         html += '<article class="post">' +
@@ -2461,22 +2416,22 @@
                 '</article>';
       });
 
-      chatBody.innerHTML = html;
+      boardBody.innerHTML = html;
 
-      chatBody.querySelectorAll('[data-shot]').forEach(function (b) {
+      boardBody.querySelectorAll('[data-shot]').forEach(function (b) {
         b.addEventListener('click', function () {
           var q = b.dataset.shot.split(':');
           openViewer(shotsOf[q[0]], parseInt(q[1], 10));
         });
       });
 
-      chatBody.querySelectorAll('[data-del]').forEach(function (b) {
+      boardBody.querySelectorAll('[data-del]').forEach(function (b) {
         b.addEventListener('click', function () {
           var id = parseInt(b.dataset.del, 10);
           confirmDialog('이 글을 지울까요?', '지운 글은 되돌릴 수 없어요.', function () {
             withStore('readwrite', function (st) {
               st.delete(id).onsuccess = function () {
-                renderChat();
+                renderBoard();
                 toast('글을 지웠어요');
               };
             });
@@ -2484,33 +2439,44 @@
         });
       });
 
-      chatBody.scrollTop = chatBody.scrollHeight;   /* 최근 글이 보이게 */
+      boardBody.scrollTop = 0;
     }
 
-    /* ---------- 첨부 ---------- */
-    function renderStrip() {
-      chatStrip.hidden = attachments.length === 0;
-      chatStrip.innerHTML = attachments.map(function (a, i) {
-        return '<button class="item pressable" type="button" data-drop="' + i + '" ' +
-                 'aria-label="첨부 ' + (i + 1) + ' 빼기">' +
-                 (a.kind === 'video'
-                   ? '<video src="' + a.url + '" preload="metadata" muted playsinline></video>'
-                   : '<img src="' + a.url + '" alt="">') +
+    /* ---------- 글 남기기 ---------- */
+    function validatePost() {
+      postSubmit.disabled = !(postText.value.trim() || postDraft.photos.length);
+    }
+
+    function renderPostPhotos() {
+      var html = postDraft.photos.map(function (p, i) {
+        return '<button class="photo-thumb pressable" type="button" data-ppic="' + i + '" ' +
+                 'aria-label="사진 ' + (i + 1) + ' 빼기">' +
+                 '<img src="' + p.url + '" alt="">' +
                  '<span class="x">' + XMARK + '</span>' +
                '</button>';
       }).join('');
 
-      chatStrip.querySelectorAll('[data-drop]').forEach(function (b) {
+      if (postDraft.photos.length < MAX_PHOTOS) html += POST_ADD;
+      postPhotos.innerHTML = html;
+      postCount.textContent = postDraft.photos.length;
+
+      var add = document.getElementById('postPhotoAdd');
+      if (add) add.addEventListener('click', function () { postInput.click(); });
+
+      postPhotos.querySelectorAll('[data-ppic]').forEach(function (b) {
         b.addEventListener('click', function () {
-          var i = parseInt(b.dataset.drop, 10);
-          URL.revokeObjectURL(attachments[i].url);
-          attachments.splice(i, 1);
-          renderStrip();
+          var i = parseInt(b.dataset.ppic, 10);
+          confirmDialog('이 사진을 뺄까요?', '아직 올리기 전이라 다시 넣을 수 있어요.', function () {
+            URL.revokeObjectURL(postDraft.photos[i].url);
+            postDraft.photos.splice(i, 1);
+            renderPostPhotos();
+            validatePost();
+          });
         });
       });
     }
 
-    /* 사진은 줄여서 담는다. 영상은 손대면 화질이 망가져서 원본 그대로 둔다. */
+    /* 원본 그대로 담으면 저장 공간이 금방 찬다 — 1600px · 품질 0.75 */
     function toSmallBlob(file, done) {
       var url = URL.createObjectURL(file);
       var img = new Image();
@@ -2527,83 +2493,95 @@
         URL.revokeObjectURL(url);
         cv.toBlob(function (b) { done(b || file); }, 'image/jpeg', 0.75);
       };
-      img.onerror = function () { URL.revokeObjectURL(url); done(file); };
+      img.onerror = function () { URL.revokeObjectURL(url); done(null); };
       img.src = url;
     }
 
-    document.getElementById('chatAttach').addEventListener('click', function () {
-      chatInput.click();
-    });
+    postInput.addEventListener('change', function () {
+      var files = Array.prototype.slice.call(postInput.files)
+                    .filter(function (f) { return f.type.indexOf('image/') === 0; });
+      if (!files.length) { postInput.value = ''; return; }
 
-    chatInput.addEventListener('change', function () {
-      var files = Array.prototype.slice.call(chatInput.files);
-      if (!files.length) return;
+      var room = MAX_PHOTOS - postDraft.photos.length;
+      if (files.length > room) {
+        files = files.slice(0, room);
+        toast('사진은 최대 ' + MAX_PHOTOS + '장까지 넣을 수 있어요');
+      }
+
       var left = files.length;
-
       files.forEach(function (file) {
-        var isVideo = file.type.indexOf('video/') === 0;
-        function add(blob) {
-          attachments.push({
-            kind: isVideo ? 'video' : 'image',
-            blob: blob,
-            url: URL.createObjectURL(blob)
-          });
-          if (--left === 0) { renderStrip(); chatInput.value = ''; }
-        }
-        if (isVideo) add(file);
-        else toSmallBlob(file, add);
+        toSmallBlob(file, function (blob) {
+          if (blob) {
+            postDraft.photos.push({ blob: blob, url: URL.createObjectURL(blob) });
+          }
+          if (--left === 0) {
+            renderPostPhotos();
+            validatePost();
+            postInput.value = '';
+          }
+        });
       });
     });
 
-    /* ---------- 남기기 ---------- */
-    chatText.addEventListener('input', function () {
-      chatText.style.height = 'auto';
-      chatText.style.height = Math.min(chatText.scrollHeight, 108) + 'px';
-    });
+    postText.addEventListener('input', validatePost);
 
-    document.getElementById('chatSend').addEventListener('click', function () {
-      var text = chatText.value.trim();
-      if (!text && !attachments.length) {
-        toast('내용을 적거나 사진을 넣어주세요');
-        return;
-      }
+    function openPostSheet() {
+      postDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
+      postDraft = { photos: [] };
+      postText.value = '';
+      postInput.value = '';
+      renderPostPhotos();
+      validatePost();
+      postScrim.classList.add('is-open');
+      postSheet.classList.add('is-open');
+    }
+    function closePostSheet() {
+      postScrim.classList.remove('is-open');
+      postSheet.classList.remove('is-open');
+      postText.blur();
+    }
+
+    postSubmit.addEventListener('click', function () {
+      if (postSubmit.disabled) return;
 
       var post = {
         id: Date.now(),
-        text: text,
+        text: postText.value.trim(),
         at: new Date().toISOString(),
-        files: attachments.map(function (a) { return { kind: a.kind, blob: a.blob }; })
+        photos: postDraft.photos.map(function (p) { return p.blob; })
       };
 
       withStore('readwrite', function (st) {
         var r = st.add(post);
         r.onsuccess = function () {
-          attachments.forEach(function (a) { URL.revokeObjectURL(a.url); });
-          attachments = [];
-          chatText.value = '';
-          chatText.style.height = '';
-          renderStrip();
-          renderChat();
-          toast('남겼어요');
+          postDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
+          postDraft = { photos: [] };
+          closePostSheet();
+          renderBoard();
+          toast('글을 올렸어요');
         };
-        r.onerror = function () { toast('저장하지 못했어요. 파일이 너무 클 수 있어요'); };
+        r.onerror = function () { toast('올리지 못했어요. 사진을 줄여주세요'); };
       });
     });
 
-    function openChatScreen() {
+    document.getElementById('openPost').addEventListener('click', openPostSheet);
+    document.getElementById('postClose').addEventListener('click', closePostSheet);
+    postScrim.addEventListener('click', closePostSheet);
+
+    /* ---------- 화면 열고 닫기 ---------- */
+    function openBoard() {
       closeDrawer();
-      chat.classList.add('is-open');
-      chat.setAttribute('aria-hidden', 'false');
-      renderChat();
+      board.classList.add('is-open');
+      board.setAttribute('aria-hidden', 'false');
+      renderBoard();
     }
-    function closeChatScreen() {
-      chat.classList.remove('is-open');
-      chat.setAttribute('aria-hidden', 'true');
-      chatText.blur();
+    function closeBoard() {
+      board.classList.remove('is-open');
+      board.setAttribute('aria-hidden', 'true');
     }
 
-    document.getElementById('openChat').addEventListener('click', openChatScreen);
-    document.getElementById('chatBack').addEventListener('click', closeChatScreen);
+    document.getElementById('openChat').addEventListener('click', openBoard);
+    document.getElementById('boardBack').addEventListener('click', closeBoard);
 
     render();
   })();
