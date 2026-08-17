@@ -720,6 +720,7 @@
     flex-direction: column;
     gap: var(--space-6);
   }
+  .sheet-body > * { flex: none; }   /* 같은 이유 — 입력칸이 눌리지 않게 */
 
   .field-label {
     margin-bottom: var(--space-2);
@@ -1142,6 +1143,9 @@
     flex-direction: column;
     gap: var(--space-3);
   }
+  /* 세로 flex 안의 자식은 기본값이 '눌러도 됨'이다. 글이 화면보다 길어지면
+     스크롤 대신 카드가 납작하게 눌려서 줄처럼 보인다. 눌리지 않게 고정한다. */
+  .board-body > * { flex: none; }
   .board-empty {
     margin: auto;
     text-align: center;
