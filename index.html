@@ -215,6 +215,10 @@
     background: var(--tds-bg-primary);
     padding-top: env(safe-area-inset-top);
   }
+  /* 시트·게시판이 덮여 있는 동안 사파리가 뒤쪽 홈 화면을 스크롤해버리면
+     닫은 뒤에 상단 구분선만 남는다. 덮여 있는 동안은 잠가둔다. */
+  .app.is-locked > .scroll { overflow: hidden; }
+
   @media (min-width: 600px) {
     .app { max-width: 430px; margin: 0 auto; border-inline: 1px solid var(--tds-line-default); }
   }
@@ -575,7 +579,7 @@
     flex-direction: column;
     background: var(--tds-bg-primary);
     padding-top: env(safe-area-inset-top);
-    transform: translateX(100%);
+    transform: translateX(101%);
     transition: transform var(--dur-slow) var(--ease-out);
   }
   .detail.is-open { transform: none; }
@@ -1111,7 +1115,7 @@
     flex-direction: column;
     background: var(--tds-bg-secondary);
     padding-top: env(safe-area-inset-top);
-    transform: translateX(100%);
+    transform: translateX(101%);
     transition: transform var(--dur-slow) var(--ease-out);
   }
   .board.is-open { transform: none; }
@@ -1729,6 +1733,19 @@
     window.addEventListener('resize', sync);
     sync();
 
+    var appEl = document.querySelector('.app');
+
+    /* 덮개가 열리고 닫힐 때마다 홈 잠금과 상단 구분선을 다시 맞춘다 */
+    function syncLock() {
+      var covered = sheet.classList.contains('is-open') ||
+                    postSheet.classList.contains('is-open') ||
+                    board.classList.contains('is-open') ||
+                    drawer.classList.contains('is-open') ||
+                    detail.classList.contains('is-open');
+      appEl.classList.toggle('is-locked', covered);
+      if (!covered) sync();
+    }
+
     /* 오늘 날짜 */
     var todayLine = document.getElementById('todayLine');
     if (todayLine) {
@@ -1958,12 +1975,14 @@
       detailBody.scrollTop = 0;
       detail.classList.add('is-open');
       detail.setAttribute('aria-hidden', 'false');
+      syncLock();
     }
 
     function closeDetail() {
       detail.classList.remove('is-open');
       detail.setAttribute('aria-hidden', 'true');
       detailG = null;
+      syncLock();
     }
 
     document.querySelectorAll('[data-detail]').forEach(function (card) {
@@ -2220,12 +2239,14 @@
       scrim.classList.add('is-open');
       sheet.classList.add('is-open');
       if (memoInput.value) fitMemo();
+      syncLock();
     }
 
     function closeSheet() {
       scrim.classList.remove('is-open');
       sheet.classList.remove('is-open');
       noInput.blur();
+      syncLock();
     }
 
     openBtn.addEventListener('click', function () { openSheet(); });
@@ -2304,11 +2325,13 @@
       drawer.classList.add('is-open');
       drawerScrim.classList.add('is-open');
       drawer.setAttribute('aria-hidden', 'false');
+      syncLock();
     }
     function closeDrawer() {
       drawer.classList.remove('is-open');
       drawerScrim.classList.remove('is-open');
       drawer.setAttribute('aria-hidden', 'true');
+      syncLock();
     }
 
     document.getElementById('menuBtn').addEventListener('click', openDrawer);
@@ -2534,11 +2557,13 @@
       validatePost();
       postScrim.classList.add('is-open');
       postSheet.classList.add('is-open');
+      syncLock();
     }
     function closePostSheet() {
       postScrim.classList.remove('is-open');
       postSheet.classList.remove('is-open');
       postText.blur();
+      syncLock();
     }
 
     postSubmit.addEventListener('click', function () {
@@ -2574,10 +2599,14 @@
       board.classList.add('is-open');
       board.setAttribute('aria-hidden', 'false');
       renderBoard();
+      /* 화면이 밀려 들어온 뒤에 띄운다 */
+      setTimeout(function () { toast('관리자가 대학생이라 확인이 어려울 수 있음'); }, 400);
+      syncLock();
     }
     function closeBoard() {
       board.classList.remove('is-open');
       board.setAttribute('aria-hidden', 'true');
+      syncLock();
     }
 
     document.getElementById('openChat').addEventListener('click', openBoard);
