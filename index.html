@@ -932,18 +932,47 @@
   .dlg-btn.danger { background: var(--tds-bg-danger); color: var(--tds-fg-inverse); }
   .dlg-btn.secondary { background: var(--tds-bg-secondary); color: var(--tds-fg-primary); }
 
-  /* 상세 목록의 사진 */
+  /* 상세 목록의 사진 — 행 버튼 밖에 둔다.
+     버튼 안에 넣으면 사파리가 자식 요소를 눌러도 버튼이 눌린 것으로 처리한다. */
+  .row-group { position: relative; padding: var(--space-4) 0; }
+  .row-group + .row-group::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 1px;
+    background: var(--tds-line-default);
+  }
+  .row-group .row { padding: 0; }
+
   .row-photos {
     display: flex;
-    gap: var(--space-1);
-    margin-top: var(--space-2);
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
   }
-  .row-photos img {
-    width: 44px; height: 44px;
+  .photo-open {
+    position: relative;
+    width: 60px; height: 60px;
+    padding: 0;
     border-radius: var(--radius-s);
     border: 1px solid var(--tds-line-default);
-    object-fit: cover;
+    overflow: hidden;
     display: block;
+  }
+  .photo-open img {
+    display: block;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .photo-open .zoom {          /* 누르면 커진다는 신호 */
+    position: absolute;
+    right: 3px; bottom: 3px;
+    width: 18px; height: 18px;
+    border-radius: var(--radius-xs);
+    background: oklch(0 0 0 / 0.55);
+    color: #FFFFFF;
+    display: grid;
+    place-items: center;
   }
 
   /* ============================================================
@@ -1543,6 +1572,12 @@
                'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
                'stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
 
+    /* 대각선 화살표 — 사진을 누르면 커진다는 표시 */
+    var ZOOM = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" ' +
+               'stroke="currentColor" stroke-width="2.6" stroke-linecap="round" ' +
+               'stroke-linejoin="round" aria-hidden="true">' +
+               '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+
     function renderDetail(g) {
       var total = TOTAL[g];
       var c = countOf(g);
@@ -1589,18 +1624,24 @@
           html += '<p class="empty t-body2">해당하는 키가 없어요</p>';
         } else {
           html += '<div class="rows">' + list.map(function (it) {
-            return '<button class="row pressable" type="button" data-edit="' + g + ':' + it.no + '">' +
-                     '<span class="row-body">' +
-                       '<span class="row-title">' + pad(it.no) + '번</span>' +
-                       (it.memo ? '<span class="row-sub wrap">' + esc(it.memo) + '</span>' : '') +
-                       (it.photos.length
-                         ? '<span class="row-photos">' + it.photos.map(function (src, i) {
-                             return '<img src="' + src + '" alt="사진 ' + (i + 1) + '" ' +
-                                    'data-view="' + g + ':' + it.no + ':' + i + '">';
-                           }).join('') + '</span>'
-                         : '') +
-                     '</span>' + CHEV +
-                   '</button>';
+            return '<div class="row-group">' +
+                     '<button class="row pressable" type="button" data-edit="' + g + ':' + it.no + '">' +
+                       '<span class="row-body">' +
+                         '<span class="row-title">' + pad(it.no) + '번</span>' +
+                         (it.memo ? '<span class="row-sub wrap">' + esc(it.memo) + '</span>' : '') +
+                       '</span>' + CHEV +
+                     '</button>' +
+                     (it.photos.length
+                       ? '<div class="row-photos">' + it.photos.map(function (src, i) {
+                           return '<button class="photo-open pressable" type="button" ' +
+                                    'data-view="' + g + ':' + it.no + ':' + i + '" ' +
+                                    'aria-label="사진 ' + (i + 1) + ' 크게 보기">' +
+                                    '<img src="' + src + '" alt="">' +
+                                    '<span class="zoom">' + ZOOM + '</span>' +
+                                  '</button>';
+                         }).join('') + '</div>'
+                       : '') +
+                   '</div>';
           }).join('') + '</div>';
         }
         html += '</div></section>';
@@ -1644,11 +1685,9 @@
         });
       });
 
-      /* 사진은 행 안에 있다 — 클릭이 행(수정 열기)까지 번지지 않게 막는다 */
-      detailBody.querySelectorAll('[data-view]').forEach(function (img) {
-        img.addEventListener('click', function (e) {
-          e.stopPropagation();
-          var parts = img.dataset.view.split(':');
+      detailBody.querySelectorAll('[data-view]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var parts = btn.dataset.view.split(':');
           var rec = data[parts[0]][parts[1]];
           if (rec) openViewer(rec.photos || [], parseInt(parts[2], 10));
         });
