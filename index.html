@@ -1377,26 +1377,24 @@
     overflow: hidden;
   }
   .mm-shots img { width: 100%; height: auto; display: block; }
-  .mm-acts {
-    margin-top: var(--space-8);
+  /* 내용이 길어져도 따라 내려가지 않게 상단바에 둔다 */
+  .bar-acts {
+    margin-left: auto;
+    margin-right: -6px;
     display: flex;
-    gap: var(--space-2);
+    align-items: center;
+    gap: var(--space-1);
   }
-  .mm-acts button {
-    flex: 1;
-    height: 52px;
-    border-radius: var(--radius-l);
+  .bar-btn {
+    padding: 6px var(--space-2);
+    border-radius: var(--radius-s);
+    color: var(--tds-fg-secondary);
     font-size: 15px;
-    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.005em;
+    font-weight: 600;
   }
-  .mm-acts .edit {
-    background: var(--tds-bg-secondary);
-    color: var(--tds-fg-primary);
-  }
-  .mm-acts .del {
-    background: var(--tds-bg-secondary);
-    color: var(--tds-fg-danger);
-  }
+  .bar-btn.danger { color: var(--tds-fg-danger); }
 
   .ho-note {
     margin-top: calc(var(--space-3) * -1);
@@ -1773,6 +1771,10 @@
       <button class="back pressable" type="button" id="mmDetailBack" aria-label="뒤로">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
       </button>
+      <span class="bar-acts">
+        <button class="bar-btn pressable" type="button" id="mmDetailEdit">수정</button>
+        <button class="bar-btn danger pressable" type="button" id="mmDetailDel">삭제</button>
+      </span>
     </div>
     <div class="scroll" id="mmDetailBody"></div>
   </section>
@@ -3493,10 +3495,6 @@
                          '<img src="' + u + '" alt=""></button>';
               }).join('') + '</div>'
             : '') +
-          '<div class="mm-acts">' +
-            '<button class="edit pressable" type="button" id="mmDetailEdit">수정</button>' +
-            '<button class="del pressable" type="button" id="mmDetailDel">삭제</button>' +
-          '</div>' +
         '</div>';
 
       mmDetailBody.querySelectorAll('[data-mmbig]').forEach(function (b) {
@@ -3505,24 +3503,27 @@
         });
       });
 
-      document.getElementById('mmDetailEdit').addEventListener('click', function () {
-        openMmSheet(rec.id);
-      });
-
-      document.getElementById('mmDetailDel').addEventListener('click', function () {
-        confirmDialog('이 메모를 지울까요?', '지운 메모는 되돌릴 수 없어요.', function () {
-          withStore('memo', 'readwrite', function (st) {
-            st.delete(rec.id).onsuccess = function () {
-              closeMmDetail();
-              renderMemo();
-              toast('메모를 지웠어요');
-            };
-          });
-        });
-      });
     }
 
     document.getElementById('mmDetailBack').addEventListener('click', closeMmDetail);
+
+    document.getElementById('mmDetailEdit').addEventListener('click', function () {
+      if (mmOpenId) openMmSheet(mmOpenId);
+    });
+
+    document.getElementById('mmDetailDel').addEventListener('click', function () {
+      var id = mmOpenId;
+      if (!id) return;
+      confirmDialog('이 메모를 지울까요?', '지운 메모는 되돌릴 수 없어요.', function () {
+        withStore('memo', 'readwrite', function (st) {
+          st.delete(id).onsuccess = function () {
+            closeMmDetail();
+            renderMemo();
+            toast('메모를 지웠어요');
+          };
+        });
+      });
+    });
 
     /* ---------- 작성 ---------- */
     function validateMm() {
