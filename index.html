@@ -174,6 +174,30 @@
 
   .tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
 
+  /* ============================================================
+     손가락이 닿는 범위
+     보이는 크기는 그대로 두고 ::before 로 눌리는 범위만 넓힌다.
+     44px 아래로 내려가는 버튼들이 대상이다.
+     ============================================================ */
+  .sheet-close, .icon-add, .back, .icon-btn,
+  .ho-fav, .ho-edit, .post-del, .bar-btn {
+    overflow: visible;              /* .pressable 의 잘라내기를 푼다 */
+  }
+  .sheet-close::before, .icon-add::before, .back::before, .icon-btn::before,
+  .ho-fav::before, .ho-edit::before, .post-del::before, .bar-btn::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+  }
+  .ho-fav::before, .ho-edit::before, .post-del::before, .bar-btn::before {
+    inset: -9px -7px;
+  }
+  /* 잘라내기를 풀면 눌림 표시가 네모로 삐져나온다 — 모서리를 맞춰준다 */
+  .sheet-close::after, .icon-add::after, .back::after, .icon-btn::after,
+  .ho-fav::after, .ho-edit::after, .post-del::after, .bar-btn::after {
+    border-radius: inherit;
+  }
+
   /* ---- type ramp ---- */
   .t-h1     { font-size: 28px; line-height: 1.30; letter-spacing: -0.020em; font-weight: 700; }
   .t-h3     { font-size: 22px; line-height: 1.30; letter-spacing: -0.015em; font-weight: 700; }
@@ -317,19 +341,6 @@
     gap: var(--space-3);
     margin-bottom: var(--space-4);
   }
-  .text-btn {
-    padding: 0;
-    display: flex;
-    align-items: center;
-    gap: 1px;
-    color: var(--tds-fg-brand);
-    font-size: 15px;
-    line-height: 1.25;
-    letter-spacing: -0.005em;
-    font-weight: 600;
-    flex: none;
-  }
-  .text-btn:active { opacity: .55; }
 
   /* ============================================================
      카드 — 흰 표면 + 1px 헤어라인, 평면
@@ -700,6 +711,7 @@
     transition: transform var(--dur-slow) var(--ease-out);
   }
   .sheet.is-open { transform: none; }
+  .sheet { overflow: hidden; }   /* 둥근 모서리 밖으로 본문이 새지 않게 */
 
   .sheet-bar {
     flex: none;
@@ -1262,7 +1274,7 @@
     font-weight: 600;
   }
   .ho-fav.is-on { color: var(--amber-500); }
-  .ho-acts { display: flex; align-items: center; gap: var(--space-2); }
+  .ho-acts { display: flex; align-items: center; gap: var(--space-4); }
   .ho-edit {
     flex: none;
     padding: var(--space-1) var(--space-2);
@@ -1278,7 +1290,7 @@
   .head-right {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
   .icon-add {
     width: 32px; height: 32px;
@@ -1384,7 +1396,7 @@
     margin-right: -6px;
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-4);
   }
   .bar-btn {
     padding: 6px var(--space-2);
@@ -1543,6 +1555,29 @@
   @keyframes rise { to { opacity: 1; transform: none; } }
 
   /* ============================================================
+     마우스 — 손가락에는 없는 '올려둔 상태'를 만들어준다
+     ============================================================ */
+  @media (hover: hover) and (pointer: fine) {
+    .pressable:hover::after { opacity: .05; }
+    .pressable:active::after { opacity: 1; }
+
+    button.row:hover,
+    .mm-card:hover,
+    .key-card:hover,
+    .drawer-item:hover,
+    .ho-more:hover { background: var(--tds-bg-secondary); }
+
+    .tab:hover { color: var(--tds-fg-secondary); }
+    .tab[aria-current="page"]:hover { color: var(--tds-fg-primary); }
+
+    .ho-fav:hover, .ho-edit:hover, .post-del:hover, .bar-btn:hover,
+    .sheet-close:hover, .icon-add:hover { opacity: .7; }
+
+    .btn-cta:hover, .btn-xl:hover { background: var(--blue-600); }
+    .dlg-btn.danger:hover { filter: brightness(.94); }
+  }
+
+  /* ============================================================
      컴퓨터 화면 — 하단 탭을 왼쪽 사이드바로 돌리고 내용을 넓게 편다.
      마크업은 그대로 두고 배치만 바꾼다 (grid 는 순서를 안 따진다).
      ============================================================ */
@@ -1647,6 +1682,27 @@
 
     /* ---------- 사이드 메뉴 ---------- */
     .drawer { width: 320px; }
+
+    /* ---------- 폰 기준으로 폭이 잡혀 있던 것들 ---------- */
+    .dialog {
+      left: 50%; right: auto;
+      width: 360px;
+      transform: translate(-50%, -50%) scale(0.96);
+    }
+    .dialog.is-open { transform: translate(-50%, -50%) scale(1); }
+
+    .toast {
+      left: 50%; right: auto;
+      width: max-content;
+      max-width: 420px;
+      bottom: var(--space-8);       /* 아래 탭바가 없다 */
+      transform: translateX(-50%) translateY(8px);
+    }
+    .toast.is-on { transform: translateX(-50%); }
+
+    /* 마우스는 정확해서 버튼이 클 필요가 없다 — 여백만 되돌린다 */
+    .ho-acts { gap: var(--space-3); }
+    .bar-acts { gap: var(--space-3); }
   }
 
   @media (prefers-reduced-motion: reduce) {
