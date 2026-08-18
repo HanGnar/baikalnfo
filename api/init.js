@@ -3,7 +3,7 @@ import { check } from './_auth.js';
 
 /* 표를 만든다. 여러 번 불러도 안전하다. */
 export default async function handler(req, res) {
-  if (!check(req, res)) return;
+  if (!(await check(req, res))) return;
   try {
     const tables = await withDb(async (q) => {
       await q(`
@@ -36,6 +36,12 @@ export default async function handler(req, res) {
         await q(`alter table ${t} add column if not exists edited_at timestamptz`);
         await q(`create index if not exists ${t}_at_idx on ${t} (at desc)`);
       }
+
+      await q(`
+        create table if not exists settings (
+          key   text primary key,
+          value text not null
+        )`);
 
       const rows = await q(`select table_name from information_schema.tables
                             where table_schema = 'public' order by table_name`);

@@ -27,7 +27,7 @@ async function ensureBucket(c) {
 export const config = { api: { bodyParser: false } };
 
 export default async function handler(req, res) {
-  if (!check(req, res)) return;
+  if (!(await check(req, res))) return;
   const c = creds();
   if (!c) return res.status(503).json({ error: 'no_storage' });
 

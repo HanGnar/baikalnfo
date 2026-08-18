@@ -3,7 +3,7 @@ import { check } from './_auth.js';
 
 /* 정상이 아닌 키만 담는다. 정상 개수는 화면에서 전체 - 여기 담긴 수로 계산한다. */
 export default async function handler(req, res) {
-  if (!check(req, res)) return;
+  if (!(await check(req, res))) return;
   try {
     if (req.method === 'GET') {
       const rows = await withDb(q => q(`select gender, no, status, memo, photos from keys`));

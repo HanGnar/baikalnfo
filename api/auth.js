@@ -1,13 +1,12 @@
-import { passcode, authed, stamp, clear, verify } from './_auth.js';
+import { state, stamp, clear, verify, setPasscode, hasPasscode } from './_auth.js';
 import { body } from './_db.js';
 
 export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
-      const on = !!passcode();
-      const ok = authed(req);
-      if (on && ok) stamp(res);            /* 만료를 다시 밀어준다 */
-      return res.status(200).json({ enabled: on, authed: ok, days: 30 });
+      const st = await state(req);
+      if (st.enabled && st.ok) stamp(res, st.secret);
+      return res.status(200).json({ enabled: st.enabled, authed: st.ok, days: 30 });
     }
 
     if (req.method === 'POST') {
@@ -15,10 +14,23 @@ export default async function handler(req, res) {
 
       if (b.logout) { clear(res); return res.status(200).json({ ok: true }); }
 
-      if (!verify(b.passcode)) {
+      /* 비밀번호 정하기 — 아직 없거나, 이미 통과한 사람만 */
+      if (b.setPasscode) {
+        const already = await hasPasscode();
+        if (already) {
+          const st = await state(req);
+          if (!st.ok) return res.status(401).json({ error: 'locked' });
+        }
+        const secret = await setPasscode(String(b.setPasscode));
+        stamp(res, secret);
+        return res.status(200).json({ ok: true, set: true });
+      }
+
+      if (!(await verify(b.passcode))) {
         return res.status(401).json({ error: 'wrong' });
       }
-      stamp(res);
+      const st = await state(req);
+      stamp(res, st.secret);
       return res.status(200).json({ ok: true });
     }
 

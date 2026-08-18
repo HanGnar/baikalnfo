@@ -1,19 +1,48 @@
 import crypto from 'crypto';
+import { withDb } from './_db.js';
 
-/* 비밀번호는 코드에 없다. Vercel 환경변수(APP_PASSCODE)에만 있다.
-   환경변수가 없으면 잠금이 꺼진 상태로 동작한다 — 설정 전에도 앱이 멈추지 않게. */
+/* 비밀번호는 코드에 없다.
+   환경변수(APP_PASSCODE)가 있으면 그것을, 없으면 데이터베이스에 저장된
+   해시를 쓴다. 원문은 어디에도 저장하지 않는다. */
 const COOKIE = 'bk_pass';
-const DAYS   = 30;
-const MAXAGE = DAYS * 24 * 60 * 60;
+const MAXAGE = 30 * 24 * 60 * 60;   /* 30일 */
 
-export function passcode() {
-  const p = process.env.APP_PASSCODE;
-  return p && String(p).length ? String(p) : null;
+let cache = null;                   /* {secret, at} — 같은 인스턴스에서 재사용 */
+const TTL = 60 * 1000;
+
+function hash(salt, pw) {
+  return crypto.createHmac('sha256', salt).update(String(pw)).digest('hex');
 }
 
-/* 비밀번호에서 만든 표. 비밀번호 자체는 브라우저로 나가지 않는다. */
-function token(p) {
-  return crypto.createHmac('sha256', p).update('baikal-gate-v1').digest('hex');
+async function readSecret() {
+  if (cache && Date.now() - cache.at < TTL) return cache.secret;
+
+  const env = process.env.APP_PASSCODE;
+  let secret = null;
+
+  if (env && String(env).length) {
+    secret = { kind: 'env', salt: 'env', hash: hash('env', env) };
+  } else {
+    try {
+      const rows = await withDb(q =>
+        q(`select key, value from settings where key in ('pass_salt','pass_hash')`));
+      const m = {};
+      rows.forEach(r => { m[r.key] = r.value; });
+      if (m.pass_salt && m.pass_hash) {
+        secret = { kind: 'db', salt: m.pass_salt, hash: m.pass_hash };
+      }
+    } catch (_) { /* 표가 아직 없으면 잠금 없음 */ }
+  }
+
+  cache = { secret, at: Date.now() };
+  return secret;
+}
+
+export function forget() { cache = null; }
+
+/* 출입증은 저장된 해시에서 파생된다 — 비밀번호를 바꾸면 전부 무효가 된다 */
+function token(secret) {
+  return crypto.createHmac('sha256', secret.hash).update('baikal-gate-v1').digest('hex');
 }
 
 function readCookie(req, name) {
@@ -32,20 +61,19 @@ function same(a, b) {
   return x.length === y.length && crypto.timingSafeEqual(x, y);
 }
 
-export function authed(req) {
-  const p = passcode();
-  if (!p) return true;                    /* 잠금 미설정 */
+export async function state(req) {
+  const secret = await readSecret();
+  if (!secret) return { enabled: false, ok: true, secret: null };
   const got = readCookie(req, COOKIE);
-  return !!got && same(got, token(p));
+  return { enabled: true, ok: !!got && same(got, token(secret)), secret };
 }
 
-/* 들어올 때마다 만료를 30일 뒤로 다시 밀어준다.
+/* 들어올 때마다 만료를 30일 뒤로 다시 민다.
    계속 쓰면 안 물어보고, 한 달을 통째로 안 들어오면 만료된다. */
-export function stamp(res) {
-  const p = passcode();
-  if (!p) return;
+export function stamp(res, secret) {
+  if (!secret) return;
   res.setHeader('Set-Cookie',
-    COOKIE + '=' + token(p) +
+    COOKIE + '=' + token(secret) +
     '; Path=/; Max-Age=' + MAXAGE +
     '; HttpOnly; Secure; SameSite=Lax');
 }
@@ -54,14 +82,33 @@ export function clear(res) {
   res.setHeader('Set-Cookie', COOKIE + '=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax');
 }
 
-export function check(req, res) {
-  if (authed(req)) { stamp(res); return true; }
+export async function check(req, res) {
+  const st = await state(req);
+  if (st.ok) { stamp(res, st.secret); return true; }
   res.status(401).json({ error: 'locked' });
   return false;
 }
 
-export function verify(input) {
-  const p = passcode();
-  if (!p) return true;
-  return same(String(input || ''), p);
+export async function verify(input) {
+  const secret = await readSecret();
+  if (!secret) return true;
+  return same(hash(secret.salt, input || ''), secret.hash);
+}
+
+/* 아직 정해진 적이 없을 때만, 또는 이미 통과한 사람만 정할 수 있다 */
+export async function setPasscode(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const h = hash(salt, pw);
+  await withDb(async (q) => {
+    await q(`insert into settings (key, value) values ('pass_salt', $1)
+             on conflict (key) do update set value = excluded.value`, [salt]);
+    await q(`insert into settings (key, value) values ('pass_hash', $1)
+             on conflict (key) do update set value = excluded.value`, [h]);
+  });
+  forget();
+  return { kind: 'db', salt, hash: h };
+}
+
+export async function hasPasscode() {
+  return !!(await readSecret());
 }

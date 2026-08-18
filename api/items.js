@@ -5,7 +5,7 @@ import { check } from './_auth.js';
 const OK = ['handover', 'memo', 'posts'];
 
 export default async function handler(req, res) {
-  if (!check(req, res)) return;
+  if (!(await check(req, res))) return;
   try {
     const type = String(req.query.type || '');
     if (!OK.includes(type)) return res.status(400).json({ error: 'bad_type' });
