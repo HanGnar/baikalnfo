@@ -2184,7 +2184,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0519';
+    var BUILD = '20260819.0522';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
@@ -3266,13 +3266,17 @@
         else past.push(p);
       });
 
-      hoFavSec.hidden = fav.length === 0;
-      if (fav.length) hoBox(hoFavBox, hoFavCount, fav, true, 'fav', '');
-      else hoFavBox.innerHTML = '';
+      hoFavSec.hidden = fav.length === 0 || VIEWS.handover.hidden;
+      if (fav.length && !VIEWS.handover.hidden) hoBox(hoFavBox, hoFavCount, fav, true, 'fav', '');
+      else if (!fav.length) hoFavBox.innerHTML = '';
+
+      renderHomeHo(fav, today);   /* 홈 요약은 화면이 숨겨져 있어도 갱신한다 */
+
+      /* 숨겨진 화면에 그려 넣으면 스크롤 영역이 안 잡힌다 — 보일 때 그린다 */
+      if (VIEWS.handover.hidden) return;
 
       hoBox(hoTodayBox, hoTodayCount, today, false, 'today', '오늘 올린 인수인계가 없어요');
       hoBox(hoPastBox,  hoPastCount,  past,  true,  'past',  '이전에 올린 인수인계가 없어요');
-      relayout(VIEWS.handover);
 
       VIEWS.handover.querySelectorAll('[data-homore]').forEach(function (b) {
         b.addEventListener('click', function () {
@@ -3311,7 +3315,7 @@
         });
       });
 
-      renderHomeHo(fav, today);
+      relayout(VIEWS.handover);
     }
 
     /* ---------- 홈 화면 요약 ---------- */
@@ -3468,19 +3472,19 @@
     hoScrim.addEventListener('click', closeHoSheet);
 
     /* 앱을 켜둔 채 자정이 지나면 오늘/이전이 어긋난다 — 돌아올 때 다시 그린다 */
-    /* 서버에서 받아 채운 뒤 브라우저에 높이를 다시 재게 한다.
-       이걸 안 하면 처음에 비어 있던 상자가 스크롤을 안 잡는 기기가 있다. */
+    /* 스크롤 상자를 한 번 껐다 켜서 다시 잡게 한다.
+       내용만 바꾸면 스크롤 영역을 새로 계산하지 않는 기기가 있다. */
     function relayout(el) {
-      if (!el) return;
-      el.style.minHeight = '0';
+      if (!el || el.hidden) return;
+      el.style.overflowY = 'hidden';
       void el.offsetHeight;
-      el.style.minHeight = '';
+      el.style.overflowY = '';
     }
 
     function refreshAll() {
       loadKeys();
-      renderHandover();
-      renderMemo();
+      renderHandover();                       /* 홈의 인수인계 요약에도 필요 */
+      if (!VIEWS.memo.hidden) renderMemo();
     }
 
     /* 다른 사람이 바꿨을 수 있으니 화면으로 돌아올 때마다 다시 받아온다 */
@@ -3541,6 +3545,7 @@
     }
 
     function drawMemo(list) {
+      if (VIEWS.memo.hidden) return;   /* 보일 때 그린다 */
       mmCount.textContent = list.length;
 
       if (!list.length) {
@@ -3753,8 +3758,6 @@
     document.getElementById('openMm').addEventListener('click', function () { openMmSheet(); });
     document.getElementById('mmClose').addEventListener('click', closeMmSheet);
     mmScrim.addEventListener('click', closeMmSheet);
-
-    renderMemo();
 
     render();      /* 빈 상태로 먼저 그리고 */
 
