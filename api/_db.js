@@ -44,8 +44,18 @@ export async function withDb(run) {
     err.code = 'NO_DB';
     throw err;
   }
+  /* 접속 문자열에 sslmode 가 박혀 있으면 pg 가 그걸 우선해서
+     인증서 검사에 걸린다. 떼어내고 우리가 직접 지정한다. */
+  let clean = url;
+  try {
+    const u = new URL(url);
+    u.searchParams.delete('sslmode');
+    u.searchParams.delete('ssl');
+    clean = u.toString();
+  } catch (_) {}
+
   const client = new pg.Client({
-    connectionString: url,
+    connectionString: clean,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000
   });
