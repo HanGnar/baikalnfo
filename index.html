@@ -227,8 +227,11 @@
   /* ============================================================
      APP SHELL
      ============================================================ */
+  /* 앱 상자를 화면에 못 박는다.
+     이러면 문서는 절대 안 움직이고, 상단바·하단 탭바도 제자리에 붙어 있고,
+     스크롤되는 곳은 가운데 본문 하나뿐이다. */
   .app {
-    position: absolute;
+    position: fixed;
     inset: 0;
     overflow: hidden;
     display: flex;
@@ -2176,7 +2179,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0502';
+    var BUILD = '20260819.0506';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
