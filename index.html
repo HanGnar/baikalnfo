@@ -312,9 +312,10 @@
     position: absolute;
     top: 56px;            /* 상단바 아래부터 */
     left: 0; right: 0; bottom: 0;
-    /* 떠 있는 탭바(높이 64 + 아래 여백 12 = 76)에 마지막 글이 걸리지 않게
-       넉넉히 띄운다. 76 + 56 = 132 */
-    padding-bottom: calc(132px + env(safe-area-inset-bottom));
+    /* 아래 여백은 안쪽 화면(.view)이 갖는다.
+       세로로 쌓는 스크롤 상자에 준 아래 여백은 사파리가 스크롤 범위에
+       넣어주지 않아서, 아무리 늘려도 마지막 글이 탭바에 걸린다. */
+    padding-bottom: 0;
   }
   /* display:flex 가 hidden 속성을 이겨버리므로 따로 눌러준다 */
   .scroll[hidden] { display: none; }
@@ -326,6 +327,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-10);
+    /* 떠 있는 탭바(높이 64 + 아래 여백 12 = 76) 위로 넉넉히 띄운다 */
+    padding-bottom: calc(132px + env(safe-area-inset-bottom));
   }
   .view[hidden] { display: none; }
   .view > * { flex: none; }
@@ -2201,7 +2204,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0529';
+    var BUILD = '20260819.0534';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
