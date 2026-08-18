@@ -1244,6 +1244,8 @@
     display: flex;
     justify-content: flex-end;
   }
+  .ho-write { margin-top: 0; }   /* 위아래 간격은 .scroll 의 gap 이 맡는다 */
+
   .ho-more {
     width: 100%;
     min-height: 48px;
@@ -1556,6 +1558,8 @@
       <p class="hero-sub t-body2 js-today">2026년 8월 18일 화요일</p>
     </div>
 
+    <button class="btn-xl pressable ho-write" type="button" id="openHo">인수인계 작성하기</button>
+
     <section>
       <div class="list-header">
         <h2 class="t-h4">오늘 업로드한 인수인계</h2>
@@ -1570,7 +1574,6 @@
         <span class="group-count t-body2" id="hoPastCount">0</span>
       </div>
       <div class="card" id="hoPastBox"></div>
-      <button class="btn-xl pressable" type="button" id="openHo">인수인계 작성하기</button>
     </section>
 
   </main>
