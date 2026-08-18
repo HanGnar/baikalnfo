@@ -47,6 +47,7 @@
     --red-500:    oklch(0.628 0.218 22);
     --green-500:  oklch(0.493 0.143 154);
     --orange-500: oklch(0.748 0.183 56);
+    --amber-500:  oklch(0.812 0.157 80);  /* 즐겨찾기 별 */
     --navy-900:   oklch(0.155 0.060 261); /* shadow / alpha 베이스 */
 
     /* ---- semantic: foreground ---- */
@@ -125,6 +126,7 @@
       --grey-500: #8B95A1; --grey-400: #B0B8C1; --grey-300: #D1D6DB; --grey-200: #E5E8EB;
       --grey-100: #F2F4F6; --grey-50: #F9FAFB; --white: #FFFFFF;
       --red-500: #F04452; --green-500: #04835B; --orange-500: #FF8A00; --navy-900: #0D1526;
+      --amber-500: #FFB020;
       --tds-fg-tertiary: rgba(13, 21, 38, .58);
       --tds-fg-quaternary: rgba(13, 21, 38, .28);
       --tds-bg-overlay: rgba(0, 0, 0, .56);
@@ -1242,7 +1244,27 @@
   .ho-foot {
     margin-top: var(--space-2);
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .ho-fav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    margin-left: calc(var(--space-2) * -1);
+    border-radius: var(--radius-s);
+    color: var(--tds-fg-tertiary);
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+  .ho-fav.is-on { color: var(--amber-500); }
+  .ho-note {
+    margin-top: calc(var(--space-3) * -1);
+    margin-bottom: var(--space-4);
+    color: var(--tds-fg-tertiary);
   }
   .ho-write { margin-top: 0; }   /* 위아래 간격은 .scroll 의 gap 이 맡는다 */
 
@@ -1560,6 +1582,14 @@
 
     <button class="btn-xl pressable ho-write" type="button" id="openHo">인수인계 작성하기</button>
 
+    <section id="hoFavSec" hidden>
+      <div class="list-header">
+        <h2 class="t-h4">중요한 인수인계</h2>
+        <span class="group-count t-body2" id="hoFavCount">0</span>
+      </div>
+      <div class="card" id="hoFavBox"></div>
+    </section>
+
     <section>
       <div class="list-header">
         <h2 class="t-h4">오늘 업로드한 인수인계</h2>
@@ -1573,6 +1603,7 @@
         <h2 class="t-h4">이전에 업로드한 인수인계</h2>
         <span class="group-count t-body2" id="hoPastCount">0</span>
       </div>
+      <p class="ho-note t-caption">올린 지 한 달이 지나면 자동으로 지워져요. 남겨야 할 글은 즐겨찾기를 켜두세요.</p>
       <div class="card" id="hoPastBox"></div>
     </section>
 
@@ -2774,6 +2805,18 @@
     var hoUrls    = [];   /* 목록에 띄운 blob 주소 — 다시 그릴 때 반납한다 */
     var hoShots   = {};
 
+    var hoFavSec   = document.getElementById('hoFavSec');
+    var hoFavBox   = document.getElementById('hoFavBox');
+    var hoFavCount = document.getElementById('hoFavCount');
+
+    var STAR_PATH = 'm12 3.6 2.55 5.17 5.7.83-4.13 4.02.98 5.68L12 16.62 6.9 19.3l.98-5.68' +
+                    'L3.75 9.6l5.7-.83z';
+    var STAR_LINE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+                    'stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" ' +
+                    'aria-hidden="true"><path d="' + STAR_PATH + '"/></svg>';
+    var STAR_FILL = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" ' +
+                    'aria-hidden="true"><path d="' + STAR_PATH + '"/></svg>';
+
     var CHEV_DOWN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" ' +
                     'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
                     'stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
@@ -2801,12 +2844,21 @@
       return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + time;
     }
 
+    /* 한 달이 지난 글은 읽는 김에 지운다. 단, 즐겨찾기가 켜져 있으면 남긴다. */
+    var HO_KEEP_DAYS = 30;
+
     function renderHandover() {
-      withStore('handover', 'readonly', function (st) {
+      withStore('handover', 'readwrite', function (st) {
         var req = st.getAll();
         req.onsuccess = function () {
-          var all = req.result.slice().sort(function (a, b) { return b.id - a.id; });
-          drawHandover(all);
+          var cutoff = Date.now() - HO_KEEP_DAYS * 24 * 60 * 60 * 1000;
+          var keep = [];
+          req.result.forEach(function (p) {
+            if (!p.fav && new Date(p.at).getTime() < cutoff) st.delete(p.id);
+            else keep.push(p);
+          });
+          keep.sort(function (a, b) { return b.id - a.id; });
+          drawHandover(keep);
         };
         req.onerror = function () { toast('불러오지 못했어요'); };
       });
@@ -2831,6 +2883,11 @@
                (p.text ? '<p class="ho-text t-body1">' + esc(p.text) + '</p>' : '') +
                (media ? '<div class="row-photos">' + media + '</div>' : '') +
                '<div class="ho-foot">' +
+                 '<button class="ho-fav pressable' + (p.fav ? ' is-on' : '') + '" ' +
+                   'type="button" data-hofav="' + p.id + '" ' +
+                   'aria-pressed="' + (p.fav ? 'true' : 'false') + '">' +
+                   (p.fav ? STAR_FILL : STAR_LINE) + (p.fav ? '중요' : '중요 표시') +
+                 '</button>' +
                  '<button class="post-del pressable" type="button" ' +
                    'data-hodel="' + p.id + '">삭제</button>' +
                '</div>' +
@@ -2840,7 +2897,7 @@
     /* 한 박스에 이만큼만 보여주고 나머지는 접어둔다.
        안 그러면 글이 쌓일수록 '작성하기' 버튼이 계속 아래로 밀린다. */
     var HO_LIMIT = 2;
-    var hoOpen = { today: false, past: false };
+    var hoOpen = { fav: false, today: false, past: false };
 
     function hoBox(box, countEl, list, withDate, key, emptyText) {
       countEl.textContent = list.length;
@@ -2868,11 +2925,24 @@
       hoUrls = [];
       hoShots = {};
 
-      var today = [], past = [];
-      all.forEach(function (p) { (isToday(p.at) ? today : past).push(p); });
+      var fav = [], today = [], past = [];
+      all.forEach(function (p) {
+        if (p.fav) fav.push(p);
+        else if (isToday(p.at)) today.push(p);
+        else past.push(p);
+      });
+
+      /* 중요한 글이 하나도 없으면 칸 자체를 감춘다 */
+      hoFavSec.hidden = fav.length === 0;
+      if (fav.length) hoBox(hoFavBox, hoFavCount, fav, true, 'fav', '');
+      else hoFavBox.innerHTML = '';   /* 반납한 사진 주소를 붙들고 있지 않게 */
 
       hoBox(hoTodayBox, hoTodayCount, today, false, 'today', '오늘 올린 인수인계가 없어요');
       hoBox(hoPastBox,  hoPastCount,  past,  true,  'past',  '이전에 올린 인수인계가 없어요');
+
+      VIEWS.handover.querySelectorAll('[data-hofav]').forEach(function (b) {
+        b.addEventListener('click', function () { toggleFav(parseInt(b.dataset.hofav, 10)); });
+      });
 
       VIEWS.handover.querySelectorAll('[data-homore]').forEach(function (b) {
         b.addEventListener('click', function () {
@@ -2901,6 +2971,22 @@
             });
           });
         });
+      });
+    }
+
+    function toggleFav(id) {
+      withStore('handover', 'readwrite', function (st) {
+        var g = st.get(id);
+        g.onsuccess = function () {
+          var rec = g.result;
+          if (!rec) return;
+          rec.fav = !rec.fav;
+          st.put(rec).onsuccess = function () {
+            renderHandover();
+            toast(rec.fav ? '중요한 인수인계로 옮겼어요'
+                          : '중요 표시를 껐어요. 한 달이 지난 글이면 곧 지워져요');
+          };
+        };
       });
     }
 
@@ -2983,6 +3069,7 @@
         id: Date.now(),
         text: hoText.value.trim(),
         at: new Date().toISOString(),
+        fav: false,
         photos: hoDraft.photos.map(function (p) { return p.blob; })
       };
 
