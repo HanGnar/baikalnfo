@@ -1438,7 +1438,22 @@
     margin-bottom: var(--space-4);
     color: var(--tds-fg-tertiary);
   }
-  .ho-write { margin-top: 0; }   /* 위아래 간격은 .scroll 의 gap 이 맡는다 */
+  /* 화면을 가로지르던 큰 버튼 대신 작은 알약 모양으로 */
+  .ho-write {
+    margin-top: 0;              /* 위아래 간격은 .scroll 의 gap 이 맡는다 */
+    align-self: start;          /* 가로로 늘어나지 않게 */
+    width: auto;
+    height: 44px;
+    padding: 0 var(--space-5) 0 var(--space-4);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    border-radius: var(--radius-full);
+    font-size: 15px;
+    line-height: 1.25;
+    letter-spacing: -0.005em;
+    font-weight: 600;
+  }
 
   .ho-more {
     width: 100%;
@@ -1723,7 +1738,10 @@
       <p class="hero-sub t-body2 js-today">2026년 8월 18일 화요일</p>
     </div>
 
-    <button class="btn-xl pressable ho-write" type="button" id="openHo">인수인계 작성하기</button>
+    <button class="btn-xl pressable ho-write" type="button" id="openHo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      인수인계 작성하기
+    </button>
 
     <section id="hoFavSec" hidden>
       <div class="list-header">
