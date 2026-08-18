@@ -150,7 +150,7 @@
   /* 홈 화면 앱(전체화면)에서는 문서가 스크롤 주체가 되려다 안쪽 상자의
      스크롤을 삼킨다. 문서에 높이를 못 박아 넘칠 것을 없애고,
      앱 상자를 화면에 붙여서 스크롤할 곳을 안쪽 하나로 확정한다. */
-  html, body { height: 100%; overflow: hidden; }
+  html, body { height: 100%; }
 
   body {
     margin: 0;
@@ -307,6 +307,9 @@
 
   /* 홈 스크롤만 — 떠 있는 탭바 높이(64) + 아래 여백 + 숨 쉴 공간 */
   .app > .scroll {
+    position: absolute;
+    top: 56px;            /* 상단바 아래부터 */
+    left: 0; right: 0; bottom: 0;
     padding-bottom: calc(64px + var(--space-3) + var(--space-6) + env(safe-area-inset-bottom));
   }
   /* display:flex 가 hidden 속성을 이겨버리므로 따로 눌러준다 */
@@ -2179,7 +2182,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0506';
+    var BUILD = '20260819.0511';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
