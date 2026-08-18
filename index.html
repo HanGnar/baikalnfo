@@ -284,6 +284,10 @@
   .app > .scroll {
     padding-bottom: calc(64px + var(--space-3) + var(--space-6) + env(safe-area-inset-bottom));
   }
+  /* display:flex 가 hidden 속성을 이겨버리므로 따로 눌러준다 */
+  .scroll[hidden] { display: none; }
+  /* 세로 flex 안에서 자식이 눌리지 않게 — 게시판과 같은 이유 */
+  .scroll > * { flex: none; }
 
   .hero { padding: var(--space-2) 0 0; }
   .hero-title {
@@ -1377,7 +1381,7 @@
     </button>
   </header>
 
-  <main class="scroll">
+  <main class="scroll" id="homeView">
 
     <!-- ============ hero ============ -->
     <div class="hero" id="largeHead">
@@ -1503,19 +1507,39 @@
 
   </main>
 
+  <!-- ============ 인수인계 ============ -->
+  <main class="scroll" id="hoView" hidden>
+
+    <div class="hero">
+      <h1 class="t-h1">인수인계</h1>
+      <p class="hero-sub t-body2">넘길 내용을 남기고, 남겨진 내용을 확인해요</p>
+    </div>
+
+    <section>
+      <div class="list-header">
+        <h2 class="t-h4">올라온 인수인계</h2>
+      </div>
+      <div class="card" id="hoBox">
+        <p class="empty t-body2">아직 올라온 인수인계가 없어요</p>
+      </div>
+      <button class="btn-xl pressable" type="button" id="openHo">인수인계 작성하기</button>
+    </section>
+
+  </main>
+
   <!-- ============ tab-bar ============ -->
   <nav class="tabbar" aria-label="주요 메뉴">
-    <button class="tab pressable" type="button" aria-current="page">
+    <button class="tab pressable" type="button" data-tab="home" aria-current="page">
       <svg class="line" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M9.5 21v-6.5h5V21"/></svg>
       <svg class="fill" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.38 3.05a1 1 0 0 1 1.24 0l8.5 6.7A1 1 0 0 1 21.5 10.5V19a3 3 0 0 1-3 3h-3.5v-6.5h-6V22H5.5a3 3 0 0 1-3-3v-8.5a1 1 0 0 1 .38-.79z"/></svg>
       홈
     </button>
-    <button class="tab pressable" type="button">
+    <button class="tab pressable" type="button" data-tab="handover">
       <svg class="line" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5h13"/><path d="M13.5 5 17 8.5 13.5 12"/><path d="M20 15.5H7"/><path d="M10.5 12 7 15.5l3.5 3.5"/></svg>
       <svg class="fill" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5h13"/><path d="M13.5 5 17 8.5 13.5 12"/><path d="M20 15.5H7"/><path d="M10.5 12 7 15.5l3.5 3.5"/></svg>
       인수인계
     </button>
-    <button class="tab pressable" type="button">
+    <button class="tab pressable" type="button" data-tab="memo">
       <svg class="line" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 13.5V19a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2H11"/><path d="M16.4 3.6a2.05 2.05 0 0 1 2.9 2.9L12 13.8l-3.9 1 1-3.9z"/></svg>
       <svg class="fill" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 13.5V19a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2H11"/><path d="M16.4 3.6a2.05 2.05 0 0 1 2.9 2.9L12 13.8l-3.9 1 1-3.9z"/></svg>
       메모
@@ -1713,19 +1737,49 @@
   (function () {
     'use strict';
 
-    /* 상단바 구분선 */
+    /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
-    var largeHead = document.getElementById('largeHead');
-    var scroller = document.querySelector('.app > .scroll');
 
     function sync() {
-      var passed = largeHead.getBoundingClientRect().bottom
-                 <= navbar.getBoundingClientRect().bottom;
+      var view = document.querySelector('.app > .scroll:not([hidden])');
+      var head = view ? view.querySelector('.hero') : null;
+      var passed = !head || head.getBoundingClientRect().bottom
+                        <= navbar.getBoundingClientRect().bottom;
       navbar.classList.toggle('is-stuck', passed);
     }
-    scroller.addEventListener('scroll', sync, { passive: true });
+
+    document.querySelectorAll('.app > .scroll').forEach(function (v) {
+      v.addEventListener('scroll', sync, { passive: true });
+    });
     window.addEventListener('resize', sync);
     sync();
+
+    /* ---------- 하단 탭 ---------- */
+    var VIEWS = {
+      home: document.getElementById('homeView'),
+      handover: document.getElementById('hoView')
+    };
+    var tabBtns = document.querySelectorAll('.tab');
+
+    function switchTab(name) {
+      if (!VIEWS[name]) { toast('아직 만들고 있어요'); return; }
+
+      Object.keys(VIEWS).forEach(function (k) { VIEWS[k].hidden = (k !== name); });
+      tabBtns.forEach(function (b) {
+        if (b.dataset.tab === name) b.setAttribute('aria-current', 'page');
+        else b.removeAttribute('aria-current');
+      });
+      VIEWS[name].scrollTop = 0;
+      sync();
+    }
+
+    tabBtns.forEach(function (b) {
+      b.addEventListener('click', function () { switchTab(b.dataset.tab); });
+    });
+
+    document.getElementById('openHo').addEventListener('click', function () {
+      toast('작성 화면은 다음에 만들어요');
+    });
 
     var appEl = document.querySelector('.app');
 
