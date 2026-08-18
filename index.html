@@ -316,6 +316,17 @@
   }
   /* display:flex 가 hidden 속성을 이겨버리므로 따로 눌러준다 */
   .scroll[hidden] { display: none; }
+
+  /* 세 화면은 스크롤 상자 하나(#stage) 안에서 서로 갈아끼워진다.
+     상자를 화면마다 따로 두면, 숨겨진 채 만들어진 상자가
+     아이폰 전체화면 모드에서 스크롤을 안 잡는다. */
+  .view {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+  .view[hidden] { display: none; }
+  .view > * { flex: none; }
   /* 세로 flex 안에서 자식이 눌리지 않게 — 게시판과 같은 이유 */
   .scroll > * { flex: none; }
 
@@ -1720,7 +1731,9 @@
     </button>
   </header>
 
-  <main class="scroll" id="homeView">
+  <div class="scroll" id="stage">
+
+  <main class="view" id="homeView">
 
     <!-- ============ hero ============ -->
     <div class="hero" id="largeHead">
@@ -1811,7 +1824,7 @@
   </main>
 
   <!-- ============ 인수인계 ============ -->
-  <main class="scroll" id="hoView" hidden>
+  <main class="view" id="hoView" hidden>
 
     <div class="hero">
       <h1 class="t-h1">인수인계</h1>
@@ -1851,7 +1864,7 @@
   </main>
 
   <!-- ============ 메모 ============ -->
-  <main class="scroll" id="memoView" hidden>
+  <main class="view" id="memoView" hidden>
 
     <div class="hero">
       <h1 class="t-h1">메모</h1>
@@ -1872,6 +1885,8 @@
     </section>
 
   </main>
+
+  </div><!-- /#stage -->
 
   <!-- ============ tab-bar ============ -->
   <nav class="tabbar" aria-label="주요 메뉴">
@@ -2184,22 +2199,21 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0522';
+    var BUILD = '20260819.0526';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
+    var stage  = document.getElementById('stage');   /* 유일한 스크롤 상자 */
 
     function sync() {
-      var view = document.querySelector('.app > .scroll:not([hidden])');
+      var view = stage.querySelector('.view:not([hidden])');
       var head = view ? view.querySelector('.hero') : null;
       var passed = !head || head.getBoundingClientRect().bottom
                         <= navbar.getBoundingClientRect().bottom;
       navbar.classList.toggle('is-stuck', passed);
     }
 
-    document.querySelectorAll('.app > .scroll').forEach(function (v) {
-      v.addEventListener('scroll', sync, { passive: true });
-    });
+    stage.addEventListener('scroll', sync, { passive: true });
     window.addEventListener('resize', sync);
     sync();
 
@@ -2219,7 +2233,7 @@
         if (b.dataset.tab === name) b.setAttribute('aria-current', 'page');
         else b.removeAttribute('aria-current');
       });
-      VIEWS[name].scrollTop = 0;
+      stage.scrollTop = 0;
       if (name === 'home') { loadKeys(); renderHandover(); }
       if (name === 'handover') renderHandover();
       if (name === 'memo') renderMemo();
@@ -3315,7 +3329,7 @@
         });
       });
 
-      relayout(VIEWS.handover);
+      relayout(stage);
     }
 
     /* ---------- 홈 화면 요약 ---------- */
@@ -3580,7 +3594,7 @@
         b.addEventListener('click', function () { openMmDetail(b.dataset.mmopen); });
       });
 
-      relayout(VIEWS.memo);
+      relayout(stage);
     }
 
     /* ---------- 상세 ---------- */
