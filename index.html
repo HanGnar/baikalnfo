@@ -175,28 +175,12 @@
   .tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
 
   /* ============================================================
-     손가락이 닿는 범위
-     보이는 크기는 그대로 두고 ::before 로 눌리는 범위만 넓힌다.
-     44px 아래로 내려가는 버튼들이 대상이다.
+     버튼 크기
+     보이는 크기 = 눌리는 크기. 최소 44px 로 맞춘다.
+     투명한 여유 영역을 따로 두지 않아, 눌리는 자리와 보이는 자리가
+     정확히 같다.
      ============================================================ */
-  .sheet-close, .icon-add, .back, .icon-btn,
-  .ho-fav, .ho-edit, .post-del, .bar-btn {
-    overflow: visible;              /* .pressable 의 잘라내기를 푼다 */
-  }
-  .sheet-close::before, .icon-add::before, .back::before, .icon-btn::before,
-  .ho-fav::before, .ho-edit::before, .post-del::before, .bar-btn::before {
-    content: "";
-    position: absolute;
-    inset: -7px;
-  }
-  .ho-fav::before, .ho-edit::before, .post-del::before, .bar-btn::before {
-    inset: -9px -7px;
-  }
-  /* 잘라내기를 풀면 눌림 표시가 네모로 삐져나온다 — 모서리를 맞춰준다 */
-  .sheet-close::after, .icon-add::after, .back::after, .icon-btn::after,
-  .ho-fav::after, .ho-edit::after, .post-del::after, .bar-btn::after {
-    border-radius: inherit;
-  }
+  /* (개별 버튼에서 각자 44px 로 맞춘다) */
 
   /* ---- type ramp ---- */
   .t-h1     { font-size: 28px; line-height: 1.30; letter-spacing: -0.020em; font-weight: 700; }
@@ -284,13 +268,14 @@
   .topbar.is-stuck .nav-title { opacity: 1; transform: none; }
 
   .icon-btn {
-    width: 40px; height: 40px;
+    width: 44px; height: 44px;
     display: grid;
     place-items: center;
     border-radius: var(--radius-m);
     color: var(--tds-fg-primary);
     flex: none;
     margin-left: auto;
+    margin-right: -6px;   /* 커진 만큼 아이콘 위치는 그대로 */
   }
 
   /* ---------- scroll ---------- */
@@ -610,13 +595,13 @@
     padding: 0 var(--space-4);
   }
   .back {
-    width: 40px; height: 40px;
+    width: 44px; height: 44px;
     display: grid;
     place-items: center;
     border-radius: var(--radius-m);
     color: var(--tds-fg-primary);
     padding: 0;
-    margin-left: -8px;
+    margin-left: -10px;   /* 커진 만큼 아이콘 위치는 그대로 */
   }
 
   .table { display: flex; flex-direction: column; }
@@ -722,7 +707,8 @@
   }
   .sheet-bar .title { flex: 1; }
   .sheet-close {
-    width: 32px; height: 32px;
+    width: 44px; height: 44px;
+    margin-right: -6px;
     border-radius: var(--radius-full);
     display: grid;
     place-items: center;
@@ -768,7 +754,7 @@
     background: var(--tds-bg-secondary);
   }
   .segmented button {
-    height: 40px;
+    height: 44px;
     border-radius: var(--radius-m);
     color: var(--tds-fg-secondary);
     font-size: 15px;
@@ -1227,8 +1213,13 @@
   }
   .post-del {
     flex: none;
-    padding: var(--space-1) var(--space-2);
-    margin-right: calc(var(--space-2) * -1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    margin-right: calc(var(--space-3) * -1);
     border-radius: var(--radius-s);
     color: var(--tds-fg-danger);
     font-size: 13px;
@@ -1237,7 +1228,7 @@
   }
 
   /* ---------- 인수인계 목록 ---------- */
-  .ho-item { position: relative; padding: var(--space-4) var(--space-5); }
+  .ho-item { position: relative; padding: var(--space-4) var(--space-5) var(--space-2); }
   .ho-item + .ho-item::before {
     content: "";
     position: absolute;
@@ -1255,18 +1246,20 @@
     word-break: break-word;
   }
   .ho-foot {
-    margin-top: var(--space-2);
+    margin-top: 0;              /* 버튼 자체 여백이 자리를 만든다 */
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-3);
+    gap: var(--space-2);
   }
   .ho-fav {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: var(--space-1);
-    padding: var(--space-1) var(--space-2);
-    margin-left: calc(var(--space-2) * -1);
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    margin-left: calc(var(--space-3) * -1);
     border-radius: var(--radius-s);
     color: var(--tds-fg-tertiary);
     font-size: 13px;
@@ -1274,10 +1267,15 @@
     font-weight: 600;
   }
   .ho-fav.is-on { color: var(--amber-500); }
-  .ho-acts { display: flex; align-items: center; gap: var(--space-4); }
+  .ho-acts { display: flex; align-items: center; gap: 0; }
   .ho-edit {
     flex: none;
-    padding: var(--space-1) var(--space-2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 var(--space-3);
     border-radius: var(--radius-s);
     color: var(--tds-fg-secondary);
     font-size: 13px;
@@ -1290,10 +1288,11 @@
   .head-right {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-2);
   }
   .icon-add {
-    width: 32px; height: 32px;
+    width: 44px; height: 44px;
+    margin-right: -6px;
     padding: 0;
     display: grid;
     place-items: center;
@@ -1393,13 +1392,18 @@
   /* 내용이 길어져도 따라 내려가지 않게 상단바에 둔다 */
   .bar-acts {
     margin-left: auto;
-    margin-right: -6px;
+    margin-right: -12px;
     display: flex;
     align-items: center;
-    gap: var(--space-4);
+    gap: 0;
   }
   .bar-btn {
-    padding: 6px var(--space-2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 var(--space-3);
     border-radius: var(--radius-s);
     color: var(--tds-fg-secondary);
     font-size: 15px;
@@ -1700,9 +1704,6 @@
     }
     .toast.is-on { transform: translateX(-50%); }
 
-    /* 마우스는 정확해서 버튼이 클 필요가 없다 — 여백만 되돌린다 */
-    .ho-acts { gap: var(--space-3); }
-    .bar-acts { gap: var(--space-3); }
   }
 
   @media (prefers-reduced-motion: reduce) {
