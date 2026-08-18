@@ -1060,11 +1060,15 @@
     min-height: 0;
     position: relative;
     margin: 0 var(--space-4);
+    touch-action: none;      /* 확대·이동은 아래 코드가 직접 처리한다 */
+    overflow: hidden;
   }
   .viewer-stage img {
     position: absolute;
     inset: 0;
     margin: auto;
+    transform-origin: center center;
+    will-change: transform;
     max-width: 100%;
     max-height: 100%;
     width: auto;
@@ -2215,7 +2219,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0542';
+    var BUILD = '20260819.0548';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
@@ -2762,6 +2766,7 @@
     var viewIdx  = 0;
 
     function showPhoto() {
+      vzReset();
       viewerImg.src = viewList[viewIdx];
       viewerCount.textContent = (viewIdx + 1) + ' / ' + viewList.length;
       viewerPrev.disabled = viewIdx === 0;
@@ -2779,9 +2784,83 @@
     }
 
     function closeViewer() {
+      vzReset();
       viewer.classList.remove('is-open');
       viewer.setAttribute('aria-hidden', 'true');
     }
+
+    /* ---------- 손가락으로 벌려 확대 ----------
+       앱 전체는 확대를 막아뒀다(전체화면 모드에서 되돌릴 방법이 없어서).
+       사진을 보는 이 화면에서만 직접 확대·이동을 처리한다. */
+    var vStage = viewer.querySelector('.viewer-stage');
+    var vz = { s: 1, x: 0, y: 0 };
+    var vPinch = null, vDrag = null, vTapAt = 0;
+
+    function vzApply() {
+      viewerImg.style.transform =
+        'translate(' + vz.x + 'px, ' + vz.y + 'px) scale(' + vz.s + ')';
+    }
+    function vzReset() {
+      vz.s = 1; vz.x = 0; vz.y = 0;
+      viewerImg.style.transform = '';
+    }
+    /* 확대한 만큼만 움직이게 — 사진이 화면 밖으로 빠지지 않는다 */
+    function vzClamp() {
+      var mx = Math.max(0, (viewerImg.offsetWidth  * vz.s - vStage.clientWidth)  / 2);
+      var my = Math.max(0, (viewerImg.offsetHeight * vz.s - vStage.clientHeight) / 2);
+      vz.x = Math.min(mx, Math.max(-mx, vz.x));
+      vz.y = Math.min(my, Math.max(-my, vz.y));
+    }
+    function vDist(t) {
+      var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy) || 1;
+    }
+    function vMid(t) {
+      return { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 };
+    }
+
+    vStage.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2) {
+        vPinch = { d: vDist(e.touches), m: vMid(e.touches), s: vz.s, x: vz.x, y: vz.y };
+        vDrag = null;
+      } else if (e.touches.length === 1 && vz.s > 1) {
+        vDrag = { x: e.touches[0].clientX, y: e.touches[0].clientY, ox: vz.x, oy: vz.y };
+      }
+    }, { passive: true });
+
+    vStage.addEventListener('touchmove', function (e) {
+      if (e.touches.length === 2 && vPinch) {
+        e.preventDefault();
+        var m = vMid(e.touches);
+        vz.s = Math.min(5, Math.max(1, vPinch.s * (vDist(e.touches) / vPinch.d)));
+        vz.x = vPinch.x + (m.x - vPinch.m.x);
+        vz.y = vPinch.y + (m.y - vPinch.m.y);
+        vzClamp(); vzApply();
+      } else if (e.touches.length === 1 && vDrag) {
+        e.preventDefault();
+        vz.x = vDrag.ox + (e.touches[0].clientX - vDrag.x);
+        vz.y = vDrag.oy + (e.touches[0].clientY - vDrag.y);
+        vzClamp(); vzApply();
+      }
+    }, { passive: false });
+
+    vStage.addEventListener('touchend', function (e) {
+      if (e.touches.length) return;
+      vPinch = null; vDrag = null;
+      if (vz.s <= 1.02) vzReset(); else { vzClamp(); vzApply(); }
+    });
+
+    /* 두 번 톡톡 치면 확대·복귀 */
+    vStage.addEventListener('click', function () {
+      var now = Date.now();
+      if (now - vTapAt < 320) {
+        if (vz.s > 1) vzReset();
+        else { vz.s = 2.5; vzClamp(); vzApply(); }
+        vTapAt = 0;
+        return;
+      }
+      vTapAt = now;
+    });
 
     document.getElementById('viewerBack').addEventListener('click', closeViewer);
     viewerPrev.addEventListener('click', function () {
