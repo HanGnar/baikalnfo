@@ -1580,6 +1580,66 @@
     font-weight: 700;
   }
 
+  /* ============================================================
+     잠금 화면 — 비밀번호를 넣기 전에는 아무것도 안 보인다
+     ============================================================ */
+  .lock {
+    position: absolute;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-5);
+    padding: var(--space-8) var(--space-6)
+             calc(var(--space-8) + env(safe-area-inset-bottom));
+    background: var(--tds-bg-primary);
+    text-align: center;
+  }
+  .lock[hidden] { display: none; }
+  .lock .mark {
+    width: 72px; height: 72px;
+    border-radius: var(--radius-xl);
+    display: block;
+  }
+  .lock .title { margin-top: var(--space-2); }
+  .lock .sub { color: var(--tds-fg-tertiary); }
+  .lock form {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .lock input {
+    width: 100%;
+    height: 56px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-l);
+    border: 1px solid var(--tds-line-default);
+    background: var(--tds-bg-secondary);
+    font: inherit;
+    font-size: 17px;
+    text-align: center;
+    letter-spacing: 0.2em;
+    color: var(--tds-fg-primary);
+    outline: none;
+    transition: border-color var(--dur-base) var(--ease),
+                background-color var(--dur-base) var(--ease);
+  }
+  .lock input:focus {
+    background: var(--tds-bg-primary);
+    border-color: var(--tds-fg-brand);
+  }
+  .lock input::placeholder { color: var(--tds-fg-quaternary); letter-spacing: 0; }
+  .lock .err {
+    min-height: 20px;
+    color: var(--tds-fg-danger);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
   /* toast — grey-900 표면 + 흰 라벨 */
   .toast {
     position: absolute;
@@ -2083,6 +2143,23 @@
     </div>
   </div>
 
+  <!-- ============ 잠금 화면 ============ -->
+  <div class="lock" id="lock" hidden>
+    <img class="mark" src="/icon.png" alt="바이칼 휘트니스" width="72" height="72">
+    <div>
+      <p class="title t-h4">바이칼 휘트니스 서현점</p>
+      <p class="sub t-body2">직원 확인용 비밀번호를 넣어주세요</p>
+    </div>
+    <form id="lockForm" autocomplete="off">
+      <input id="lockInput" type="password" inputmode="numeric"
+             autocomplete="current-password" placeholder="비밀번호"
+             aria-label="비밀번호">
+      <p class="err" id="lockErr" role="alert"></p>
+      <button class="btn-cta pressable" type="submit" id="lockBtn">확인</button>
+    </form>
+    <p class="sub t-caption">한 번 넣으면 30일 동안 다시 안 물어봐요</p>
+  </div>
+
   <div class="toast t-body2" id="toast" role="status" aria-live="polite"></div>
 
 </div><!-- /.app -->
@@ -2204,6 +2281,7 @@
       return fetch(path, o)
         .then(function (r) {
           clearTimeout(timer);
+          if (r.status === 401) { showLock(); return { error: 'locked' }; }
           /* 서버가 잠깐 뻗은 경우도 재시도 대상이다 */
           if (r.status >= 500 && tries > 1) {
             return wait(900).then(function () { return request(path, opts, tries - 1); });
@@ -2219,6 +2297,7 @@
         });
     }
 
+    /* 잠겨 있으면(401) 되풀이하지 않고 바로 잠금 화면을 띄운다 */
     function apiGet(path) {
       return request(path, {});
     }
@@ -3645,7 +3724,69 @@
     renderMemo();
 
     render();      /* 빈 상태로 먼저 그리고 */
-    loadKeys();    /* 서버 내용이 오면 다시 그린다 */
+
+    /* ==========================================================
+       잠금
+       비밀번호는 서버에만 있다. 맞히면 30일짜리 출입증이 발급되고,
+       들어올 때마다 30일이 다시 밀린다. 한 달을 통째로 안 들어오면
+       출입증이 만료돼 다시 물어본다.
+       ========================================================== */
+    var lock      = document.getElementById('lock');
+    var lockForm  = document.getElementById('lockForm');
+    var lockInput = document.getElementById('lockInput');
+    var lockErr   = document.getElementById('lockErr');
+    var lockBtn   = document.getElementById('lockBtn');
+
+    function showLock() {
+      if (!lock.hidden) return;
+      lock.hidden = false;
+      lockErr.textContent = '';
+      lockInput.value = '';
+      setTimeout(function () { lockInput.focus(); }, 120);
+    }
+
+    function openApp() {
+      lock.hidden = true;
+      refreshAll();
+    }
+
+    lockForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var pw = lockInput.value.trim();
+      if (!pw) { lockErr.textContent = '비밀번호를 넣어주세요'; return; }
+
+      lockBtn.disabled = true;
+      lockBtn.textContent = '확인 중…';
+      lockErr.textContent = '';
+
+      fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode: pw })
+      }).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
+        .then(function (o) {
+          lockBtn.disabled = false;
+          lockBtn.textContent = '확인';
+          if (o.s === 200 && o.j.ok) { openApp(); return; }
+          lockErr.textContent = '비밀번호가 맞지 않아요';
+          lockInput.value = '';
+          lockInput.focus();
+        })
+        .catch(function () {
+          lockBtn.disabled = false;
+          lockBtn.textContent = '확인';
+          lockErr.textContent = '서버에 연결하지 못했어요';
+        });
+    });
+
+    /* 처음 열 때 출입증이 살아 있는지 확인한다 */
+    fetch('/api/auth', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (r.enabled && !r.authed) showLock();
+        else openApp();
+      })
+      .catch(function () { openApp(); });
   })();
 </script>
 

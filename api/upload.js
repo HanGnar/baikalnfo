@@ -1,3 +1,5 @@
+import { check } from './_auth.js';
+
 /* 사진은 Supabase Storage 에 올리고 주소만 데이터베이스에 저장한다.
    접속 키는 서버 환경변수로만 읽는다 — 브라우저로 나가지 않는다. */
 
@@ -25,6 +27,7 @@ async function ensureBucket(c) {
 export const config = { api: { bodyParser: false } };
 
 export default async function handler(req, res) {
+  if (!check(req, res)) return;
   const c = creds();
   if (!c) return res.status(503).json({ error: 'no_storage' });
 

@@ -1,9 +1,11 @@
 import { withDb, fail, body } from './_db.js';
+import { check } from './_auth.js';
 
 /* 인수인계 · 메모 · 게시판은 형태가 같아서 한 곳에서 처리한다 */
 const OK = ['handover', 'memo', 'posts'];
 
 export default async function handler(req, res) {
+  if (!check(req, res)) return;
   try {
     const type = String(req.query.type || '');
     if (!OK.includes(type)) return res.status(400).json({ error: 'bad_type' });
