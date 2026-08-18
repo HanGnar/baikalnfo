@@ -25,6 +25,12 @@ export default async function handler(req, res) {
             at        timestamptz not null default now(),
             edited_at timestamptz
           )`);
+        /* 예전에 다른 경로로 먼저 만들어진 표에는 빠진 칸이 있을 수 있다 */
+        await q(`alter table ${t} add column if not exists body text not null default ''`);
+        await q(`alter table ${t} add column if not exists photos text[] not null default '{}'`);
+        await q(`alter table ${t} add column if not exists fav boolean not null default false`);
+        await q(`alter table ${t} add column if not exists at timestamptz not null default now()`);
+        await q(`alter table ${t} add column if not exists edited_at timestamptz`);
         await q(`create index if not exists ${t}_at_idx on ${t} (at desc)`);
       }
 
