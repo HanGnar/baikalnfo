@@ -1389,7 +1389,7 @@
         <span>바이칼 휘트니스 서현점</span>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
       </button>
-      <p class="hero-sub t-body2" id="todayLine">2026년 8월 18일 화요일</p>
+      <p class="hero-sub t-body2 js-today">2026년 8월 18일 화요일</p>
     </div>
 
     <!-- ============ 전체 키 현황 ============ -->
@@ -1512,7 +1512,7 @@
 
     <div class="hero">
       <h1 class="t-h1">인수인계</h1>
-      <p class="hero-sub t-body2">넘길 내용을 남기고, 남겨진 내용을 확인해요</p>
+      <p class="hero-sub t-body2 js-today">2026년 8월 18일 화요일</p>
     </div>
 
     <section>
@@ -1795,14 +1795,15 @@
     }
 
     /* 오늘 날짜 */
-    var todayLine = document.getElementById('todayLine');
-    if (todayLine) {
-      var DAYS = ['일', '월', '화', '수', '목', '금', '토'];
-      var d = new Date();
-      todayLine.textContent =
-        d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' +
-        d.getDate() + '일 ' + DAYS[d.getDay()] + '요일';
-    }
+    var DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+    var today = new Date();
+    var todayText =
+      today.getFullYear() + '년 ' + (today.getMonth() + 1) + '월 ' +
+      today.getDate() + '일 ' + DAYS[today.getDay()] + '요일';
+
+    document.querySelectorAll('.js-today').forEach(function (el) {
+      el.textContent = todayText;
+    });
 
     /* 탭 선택 */
     var tabs = document.querySelectorAll('.tab');
