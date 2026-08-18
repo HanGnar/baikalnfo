@@ -1641,10 +1641,7 @@
 
     <!-- ============ hero ============ -->
     <div class="hero" id="largeHead">
-      <button class="hero-title t-h1" type="button">
-        <span>바이칼 휘트니스 서현점</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-      </button>
+      <h1 class="hero-title t-h1"><span>바이칼 휘트니스 서현점</span></h1>
       <p class="hero-sub t-body2 js-today">2026년 8월 18일 화요일</p>
     </div>
 
@@ -3012,7 +3009,6 @@
       board.classList.add('is-open');
       board.setAttribute('aria-hidden', 'false');
       renderBoard();
-      setTimeout(function () { toast('관리자가 대학생이라 확인이 어려울 수 있음'); }, 400);
       syncLock();
     }
     function closeBoard() {
