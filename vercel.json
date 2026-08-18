@@ -17,24 +17,6 @@
           "value": "no-store, must-revalidate"
         }
       ]
-    },
-    {
-      "source": "/web",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/web/index.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, must-revalidate"
-        }
-      ]
     }
   ]
 }
