@@ -312,7 +312,9 @@
     position: absolute;
     top: 56px;            /* 상단바 아래부터 */
     left: 0; right: 0; bottom: 0;
-    padding-bottom: calc(64px + var(--space-3) + var(--space-6) + env(safe-area-inset-bottom));
+    /* 떠 있는 탭바(높이 64 + 아래 여백 12 = 76)에 마지막 글이 걸리지 않게
+       넉넉히 띄운다. 76 + 56 = 132 */
+    padding-bottom: calc(132px + env(safe-area-inset-bottom));
   }
   /* display:flex 가 hidden 속성을 이겨버리므로 따로 눌러준다 */
   .scroll[hidden] { display: none; }
@@ -2199,7 +2201,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0526';
+    var BUILD = '20260819.0529';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
