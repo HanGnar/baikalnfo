@@ -1345,20 +1345,35 @@
     display: flex;
     flex-direction: column;
   }
-  .mm-card .txt {
-    flex: 1;
-    min-height: 0;
+  .mm-card .ttl {
+    flex: none;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 2;
     overflow: hidden;
     word-break: break-word;
     font-size: 15px;
     line-height: 1.45;
     letter-spacing: -0.010em;
-    font-weight: 500;
+    font-weight: 600;
   }
-  .mm-card.has-shot .txt { -webkit-line-clamp: 2; }
+  .mm-card.has-shot .ttl { -webkit-line-clamp: 1; }
+  .mm-card .txt {
+    flex: 1;
+    min-height: 0;
+    margin-top: 2px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    word-break: break-word;
+    color: var(--tds-fg-tertiary);
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 400;
+  }
+  .mm-card.has-shot .txt { -webkit-line-clamp: 1; }
+  .mm-card .txt:empty { display: none; }
   .mm-card .when {
     flex: none;
     margin-top: var(--space-2);
@@ -1367,6 +1382,10 @@
 
   /* ---------- 메모 상세 ---------- */
   .mm-detail { display: flex; flex-direction: column; }
+  .mm-head {
+    margin-bottom: var(--space-2);
+    word-break: break-word;
+  }
   .mm-full {
     margin-top: var(--space-2);
     white-space: pre-wrap;
@@ -1994,9 +2013,17 @@
 
     <div class="sheet-body">
       <div>
-        <p class="field-label">내용</p>
+        <p class="field-label">제목</p>
+        <label class="text-field">
+          <input id="mmTitle" type="text" maxlength="40" autocomplete="off"
+                 placeholder="예) 락스 주문" aria-label="메모 제목">
+        </label>
+      </div>
+
+      <div>
+        <p class="field-label">내용<span class="optional">선택</span></p>
         <label class="post-field">
-          <textarea id="mmText" placeholder="예) 락스 주문해두기, 3층 러닝머신 5번 소음 확인" aria-label="메모 내용"></textarea>
+          <textarea id="mmText" placeholder="예) 3층 러닝머신 5번 소음 확인, 기사님 내일 오전 방문" aria-label="메모 내용"></textarea>
         </label>
       </div>
 
@@ -3348,6 +3375,7 @@
     var mmCount      = document.getElementById('mmCount');
     var mmSheet      = document.getElementById('mmSheet');
     var mmScrim      = document.getElementById('mmScrim');
+    var mmTitle      = document.getElementById('mmTitle');
     var mmText       = document.getElementById('mmText');
     var mmPhotos     = document.getElementById('mmPhotos');
     var mmInput      = document.getElementById('mmInput');
@@ -3394,14 +3422,19 @@
         var thumb = shots.length
           ? '<span class="thumb"><img src="' + shots[0] + '" alt=""></span>'
           : '';
-        /* 사진만 있는 메모는 글자 자리가 비어 허전하다 */
-        var txt = p.body ? esc(p.body) : (shots.length ? '사진 ' + shots.length + '장' : '');
+        /* 제목이 있으면 제목이 머리줄, 내용은 아랫줄.
+           제목 없이 쓴 예전 메모는 내용을 머리줄로 올린다. */
+        var head = p.title ? esc(p.title)
+                           : (p.body ? esc(p.body)
+                                     : (shots.length ? '사진 ' + shots.length + '장' : ''));
+        var sub  = p.title && p.body ? esc(p.body) : '';
 
         return '<button class="mm-card pressable' + (shots.length ? ' has-shot' : '') + '" ' +
                  'type="button" data-mmopen="' + p.id + '">' +
                  thumb +
                  '<span class="body">' +
-                   '<span class="txt">' + txt + '</span>' +
+                   '<span class="ttl">' + head + '</span>' +
+                   '<span class="txt">' + sub + '</span>' +
                    '<span class="when t-caption">' + hoWhen(p.at, true) + '</span>' +
                  '</span>' +
                '</button>';
@@ -3436,6 +3469,7 @@
 
       mmDetailBody.innerHTML =
         '<div class="mm-detail">' +
+          (rec.title ? '<h1 class="mm-head t-h3">' + esc(rec.title) + '</h1>' : '') +
           '<p class="ho-when t-caption">' + hoWhen(rec.at, true) +
             (rec.edited_at ? ' · 수정됨' : '') + '</p>' +
           (rec.body ? '<p class="mm-full">' + esc(rec.body) + '</p>' : '') +
@@ -3476,7 +3510,7 @@
 
     /* ---------- 작성 ---------- */
     function validateMm() {
-      mmSubmit.disabled = !(mmText.value.trim() || mmDraft.photos.length);
+      mmSubmit.disabled = !(mmTitle.value.trim() || mmText.value.trim() || mmDraft.photos.length);
     }
 
     function renderMmPhotos() {
@@ -3516,11 +3550,13 @@
       });
     });
 
+    mmTitle.addEventListener('input', validateMm);
     mmText.addEventListener('input', validateMm);
 
     function openMmSheet(id) {
       mmDraft = { photos: [] };
       mmEditId = null;
+      mmTitle.value = '';
       mmText.value = '';
       mmInput.value = '';
       mmSheetTitle.textContent = '메모 작성하기';
@@ -3530,6 +3566,7 @@
         var rec = mmAll.filter(function (x) { return String(x.id) === String(id); })[0];
         if (rec) {
           mmEditId = id;
+          mmTitle.value = rec.title || '';
           mmText.value = rec.body || '';
           mmDraft.photos = (rec.photos || []).slice();
           mmSheetTitle.textContent = '메모 수정';
@@ -3547,6 +3584,7 @@
     function closeMmSheet() {
       mmScrim.classList.remove('is-open');
       mmSheet.classList.remove('is-open');
+      mmTitle.blur();
       mmText.blur();
       syncLock();
     }
@@ -3559,7 +3597,11 @@
       mmSubmit.disabled = true;
       mmSubmit.textContent = '저장 중…';
 
-      var payload = { body: mmText.value.trim(), photos: mmDraft.photos };
+      var payload = {
+        title: mmTitle.value.trim(),
+        body: mmText.value.trim(),
+        photos: mmDraft.photos
+      };
       if (editing) payload.id = editing;
 
       apiPost('/api/items?type=memo', payload).then(function (r) {
