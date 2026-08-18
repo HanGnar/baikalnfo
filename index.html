@@ -2115,23 +2115,59 @@
        서버와 주고받기
        모든 내용이 서버 한 곳에 있어서 누가 바꾸든 모두에게 같이 보인다.
        ========================================================== */
+    /* 데이터·핫스팟은 와이파이보다 순간적으로 잘 끊긴다.
+       한 번 실패했다고 바로 포기하지 않고 잠깐 쉬었다 다시 시도한다. */
+    function wait(ms) {
+      return new Promise(function (ok) { setTimeout(ok, ms); });
+    }
+
+    function request(path, opts, tries) {
+      tries = tries === undefined ? 3 : tries;
+      var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+      var o = Object.assign({ cache: 'no-store' }, opts || {});
+      if (ctl) o.signal = ctl.signal;
+
+      /* 신호가 약하면 응답 없이 매달려 있기만 할 때가 있다 */
+      var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 20000);
+
+      return fetch(path, o)
+        .then(function (r) {
+          clearTimeout(timer);
+          /* 서버가 잠깐 뻗은 경우도 재시도 대상이다 */
+          if (r.status >= 500 && tries > 1) {
+            return wait(900).then(function () { return request(path, opts, tries - 1); });
+          }
+          return r.json();
+        })
+        .catch(function (e) {
+          clearTimeout(timer);
+          if (tries > 1) {
+            return wait(900).then(function () { return request(path, opts, tries - 1); });
+          }
+          throw e;
+        });
+    }
+
     function apiGet(path) {
-      return fetch(path, { cache: 'no-store' }).then(function (r) { return r.json(); });
+      return request(path, {});
     }
     function apiPost(path, obj) {
-      return fetch(path, {
+      return request(path, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(obj)
-      }).then(function (r) { return r.json(); });
+      });
     }
     function apiDel(path) {
-      return fetch(path, { method: 'DELETE' }).then(function (r) { return r.json(); });
+      return request(path, { method: 'DELETE' });
     }
 
-    /* 인터넷이 끊기면 조용히 실패하지 않고 알려준다 */
+    /* 조용히 실패하지 않는다. 인터넷 문제인지 서버 문제인지 구분해서 알린다. */
     function netFail(e) {
-      toast('서버에 연결하지 못했어요. 인터넷을 확인해주세요');
+      var offline = ('onLine' in navigator) && navigator.onLine === false;
+      toast(offline
+        ? '인터넷이 끊겼어요. 데이터나 와이파이를 확인해주세요'
+        : '서버에 연결하지 못했어요. 잠시 후 다시 해주세요');
       return null;
     }
 
@@ -2471,12 +2507,11 @@
     function uploadPhoto(file, done) {
       toJpeg(file, function (blob) {
         if (!blob) { done(null); return; }
-        fetch('/api/upload', {
+        request('/api/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'image/jpeg' },
           body: blob
-        }).then(function (r) { return r.json(); })
-          .then(function (r) { done(r && r.url ? r.url : null); })
+        }).then(function (r) { done(r && r.url ? r.url : null); })
           .catch(function () { done(null); });
       });
     }
@@ -3262,12 +3297,24 @@
     hoScrim.addEventListener('click', closeHoSheet);
 
     /* 앱을 켜둔 채 자정이 지나면 오늘/이전이 어긋난다 — 돌아올 때 다시 그린다 */
-    /* 다른 사람이 바꿨을 수 있으니 화면으로 돌아올 때마다 다시 받아온다 */
-    document.addEventListener('visibilitychange', function () {
-      if (document.hidden) return;
+    function refreshAll() {
       loadKeys();
       renderHandover();
       renderMemo();
+    }
+
+    /* 다른 사람이 바꿨을 수 있으니 화면으로 돌아올 때마다 다시 받아온다 */
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) refreshAll();
+    });
+
+    /* 데이터가 끊겼다 돌아오면 알아서 최신으로 맞춘다 */
+    window.addEventListener('online', function () {
+      toast('다시 연결됐어요');
+      refreshAll();
+    });
+    window.addEventListener('offline', function () {
+      toast('인터넷이 끊겼어요. 저장이 안 될 수 있어요');
     });
 
     renderHandover();
