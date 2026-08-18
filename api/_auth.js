@@ -8,14 +8,18 @@ const COOKIE = 'bk_pass';
 const MAXAGE = 30 * 24 * 60 * 60;   /* 30일 */
 
 let cache = null;                   /* {secret, at} — 같은 인스턴스에서 재사용 */
-const TTL = 60 * 1000;
+const TTL_LOCKED = 60 * 1000;       /* 잠긴 상태는 넉넉히 기억해도 된다 */
+const TTL_OPEN   = 3 * 1000;        /* '잠금 없음'을 오래 기억하면 그동안 문이 열려 있다 */
 
 function hash(salt, pw) {
   return crypto.createHmac('sha256', salt).update(String(pw)).digest('hex');
 }
 
 async function readSecret() {
-  if (cache && Date.now() - cache.at < TTL) return cache.secret;
+  if (cache) {
+    const ttl = cache.secret ? TTL_LOCKED : TTL_OPEN;
+    if (Date.now() - cache.at < ttl) return cache.secret;
+  }
 
   const env = process.env.APP_PASSCODE;
   let secret = null;
