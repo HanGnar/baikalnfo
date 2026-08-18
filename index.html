@@ -202,6 +202,7 @@
     content: "";
     position: absolute;
     inset: 0;
+    border-radius: inherit;   /* 표시 모양 = 버튼 모양 */
     background: var(--tds-press-overlay);
     opacity: 0;
     pointer-events: none;
@@ -772,6 +773,7 @@
 
   /* text-field — 48px · radius 12 · grey-100 → focus 흰 배경 + 1.5px blue */
   .text-field {
+    cursor: text;
     display: flex;
     align-items: center;
     gap: var(--space-3);
@@ -1448,6 +1450,7 @@
 
   /* 글 쓰는 칸 — 등록 시트의 메모 칸보다 넉넉하게 */
   .post-field {
+    cursor: text;
     border-radius: var(--radius-l);
     background: var(--tds-bg-secondary);
     padding: var(--space-3);
@@ -1468,6 +1471,7 @@
 
   /* 메모 */
   .memo-field {
+    cursor: text;
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-m);
     background: var(--tds-bg-secondary);
@@ -1686,6 +1690,44 @@
 
     /* ---------- 사이드 메뉴 ---------- */
     .drawer { width: 320px; }
+
+    /* ------------------------------------------------------------
+       조작 요소를 넓어진 화면에 맞춰 키운다.
+       전부 실제 크기라서 보이는 자리와 눌리는 자리가 그대로 같다.
+       ------------------------------------------------------------ */
+    .tab            { min-height: 52px; }
+    .back,
+    .icon-btn,
+    .sheet-close,
+    .icon-add       { width: 48px; height: 48px; }
+    .back           { margin-left: -12px; }
+    .icon-btn       { margin-right: -8px; }
+    .sheet-close    { margin-right: -8px; }
+    .icon-add       { margin-right: -8px; }
+
+    .text-field     { min-height: 56px; }
+    .text-field input { padding: var(--space-4) 0; }
+    .memo-field     { padding: var(--space-4); }
+    .post-field     { padding: var(--space-4); }
+    .post-field textarea { min-height: 112px; }
+
+    .segmented button { height: 48px; }
+    .pick button      { min-height: 56px; }
+    .drawer-item      { min-height: 56px; }
+    .dlg-btn          { height: 52px; }
+    .ho-more          { min-height: 52px; }
+
+    .photo-add, .photo-thumb { width: 88px; height: 88px; }
+    .photo-open              { width: 56px; height: 56px; }
+    .post-media { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+
+    .ho-fav, .ho-edit, .post-del, .bar-btn {
+      min-height: 44px;
+      padding: 0 var(--space-4);
+    }
+    .ho-fav   { margin-left: calc(var(--space-4) * -1); }
+    .post-del { margin-right: calc(var(--space-4) * -1); }
+    .bar-acts { margin-right: -16px; }
 
     /* ---------- 폰 기준으로 폭이 잡혀 있던 것들 ---------- */
     .dialog {
@@ -1966,12 +2008,12 @@
 
       <div>
         <p class="field-label">키 번호</p>
-        <div class="text-field">
+        <label class="text-field">
           <input id="noInput" type="text" inputmode="numeric" pattern="[0-9]*"
                  autocomplete="off" maxlength="3"
                  placeholder="번호 입력" aria-label="키 번호">
           <span class="suffix t-body2" id="rangeHint">1 – 200</span>
-        </div>
+        </label>
         <p class="field-error" id="noError"></p>
       </div>
 
@@ -2006,11 +2048,11 @@
 
       <div>
         <p class="field-label">메모<span class="optional">선택</span></p>
-        <div class="memo-field">
+        <label class="memo-field">
           <textarea id="memoInput" rows="1" maxlength="100"
                     placeholder="OOO회원님 열쇠 분실 연락처 010-1234-5678"
                     aria-label="메모 (선택 입력)"></textarea>
-        </div>
+        </label>
         <p class="memo-count"><span id="memoCount">0</span> / 100</p>
       </div>
     </div>
@@ -2076,9 +2118,9 @@
     <div class="sheet-body">
       <div>
         <p class="field-label">내용</p>
-        <div class="post-field">
+        <label class="post-field">
           <textarea id="postText" placeholder="예) 남자 87번 키 고장났습니다. 확인 부탁드려요" aria-label="남길 내용"></textarea>
-        </div>
+        </label>
       </div>
 
       <div>
@@ -2107,9 +2149,9 @@
     <div class="sheet-body">
       <div>
         <p class="field-label">내용</p>
-        <div class="post-field">
+        <label class="post-field">
           <textarea id="hoText" placeholder="예) 남자 87번 키 고장, 사물함 수리 기사 내일 오전 방문" aria-label="인수인계 내용"></textarea>
-        </div>
+        </label>
       </div>
 
       <div>
@@ -2138,9 +2180,9 @@
     <div class="sheet-body">
       <div>
         <p class="field-label">내용</p>
-        <div class="post-field">
+        <label class="post-field">
           <textarea id="mmText" placeholder="예) 락스 주문해두기, 3층 러닝머신 5번 소음 확인" aria-label="메모 내용"></textarea>
-        </div>
+        </label>
       </div>
 
       <div>
