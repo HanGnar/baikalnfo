@@ -291,7 +291,6 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     padding: 0 var(--space-6) var(--space-8);
     display: flex;
@@ -1150,7 +1149,6 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
     padding: var(--space-4);
     display: flex;
     flex-direction: column;
@@ -3250,6 +3248,7 @@
 
       hoBox(hoTodayBox, hoTodayCount, today, false, 'today', '오늘 올린 인수인계가 없어요');
       hoBox(hoPastBox,  hoPastCount,  past,  true,  'past',  '이전에 올린 인수인계가 없어요');
+      relayout(VIEWS.handover);
 
       VIEWS.handover.querySelectorAll('[data-homore]').forEach(function (b) {
         b.addEventListener('click', function () {
@@ -3445,6 +3444,15 @@
     hoScrim.addEventListener('click', closeHoSheet);
 
     /* 앱을 켜둔 채 자정이 지나면 오늘/이전이 어긋난다 — 돌아올 때 다시 그린다 */
+    /* 서버에서 받아 채운 뒤 브라우저에 높이를 다시 재게 한다.
+       이걸 안 하면 처음에 비어 있던 상자가 스크롤을 안 잡는 기기가 있다. */
+    function relayout(el) {
+      if (!el) return;
+      el.style.minHeight = '0';
+      void el.offsetHeight;
+      el.style.minHeight = '';
+    }
+
     function refreshAll() {
       loadKeys();
       renderHandover();
@@ -3542,6 +3550,8 @@
       mmBox.querySelectorAll('[data-mmopen]').forEach(function (b) {
         b.addEventListener('click', function () { openMmDetail(b.dataset.mmopen); });
       });
+
+      relayout(VIEWS.memo);
     }
 
     /* ---------- 상세 ---------- */
