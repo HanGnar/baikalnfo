@@ -1244,6 +1244,23 @@
     display: flex;
     justify-content: flex-end;
   }
+  .ho-more {
+    width: 100%;
+    min-height: 48px;
+    padding: var(--space-3) var(--space-5);
+    border-top: 1px solid var(--tds-line-default);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    color: var(--tds-fg-secondary);
+    font-size: 15px;
+    line-height: 1.45;
+    letter-spacing: -0.010em;
+    font-weight: 600;
+  }
+  .ho-more svg { transition: transform var(--dur-base) var(--ease); }
+  .ho-more.is-open svg { transform: rotate(180deg); }
 
   .board-cta {
     flex: none;
@@ -2754,6 +2771,10 @@
     var hoUrls    = [];   /* 목록에 띄운 blob 주소 — 다시 그릴 때 반납한다 */
     var hoShots   = {};
 
+    var CHEV_DOWN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" ' +
+                    'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+                    'stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
     var HO_ADD =
       '<button class="photo-add pressable" type="button" id="hoPhotoAdd">' +
         '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
@@ -2813,6 +2834,32 @@
              '</div>';
     }
 
+    /* 한 박스에 이만큼만 보여주고 나머지는 접어둔다.
+       안 그러면 글이 쌓일수록 '작성하기' 버튼이 계속 아래로 밀린다. */
+    var HO_LIMIT = 3;
+    var hoOpen = { today: false, past: false };
+
+    function hoBox(box, countEl, list, withDate, key, emptyText) {
+      countEl.textContent = list.length;
+
+      if (!list.length) {
+        box.innerHTML = '<p class="empty t-body2">' + emptyText + '</p>';
+        return;
+      }
+
+      var shown = hoOpen[key] ? list : list.slice(0, HO_LIMIT);
+      var html = shown.map(function (p) { return hoRow(p, withDate); }).join('');
+
+      if (list.length > HO_LIMIT) {
+        html += '<button class="ho-more pressable' + (hoOpen[key] ? ' is-open' : '') +
+                  '" type="button" data-homore="' + key + '">' +
+                  (hoOpen[key] ? '접기' : '더보기 ' + (list.length - HO_LIMIT) + '개') +
+                  CHEV_DOWN +
+                '</button>';
+      }
+      box.innerHTML = html;
+    }
+
     function drawHandover(all) {
       hoUrls.forEach(function (u) { URL.revokeObjectURL(u); });
       hoUrls = [];
@@ -2821,16 +2868,16 @@
       var today = [], past = [];
       all.forEach(function (p) { (isToday(p.at) ? today : past).push(p); });
 
-      hoTodayBox.innerHTML = today.length
-        ? today.map(function (p) { return hoRow(p, false); }).join('')
-        : '<p class="empty t-body2">오늘 올린 인수인계가 없어요</p>';
+      hoBox(hoTodayBox, hoTodayCount, today, false, 'today', '오늘 올린 인수인계가 없어요');
+      hoBox(hoPastBox,  hoPastCount,  past,  true,  'past',  '이전에 올린 인수인계가 없어요');
 
-      hoPastBox.innerHTML = past.length
-        ? past.map(function (p) { return hoRow(p, true); }).join('')
-        : '<p class="empty t-body2">이전에 올린 인수인계가 없어요</p>';
-
-      hoTodayCount.textContent = today.length;
-      hoPastCount.textContent  = past.length;
+      VIEWS.handover.querySelectorAll('[data-homore]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var k = b.dataset.homore;
+          hoOpen[k] = !hoOpen[k];
+          renderHandover();
+        });
+      });
 
       VIEWS.handover.querySelectorAll('[data-hoshot]').forEach(function (b) {
         b.addEventListener('click', function () {
