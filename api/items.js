@@ -15,7 +15,8 @@ export default async function handler(req, res) {
           await q(`delete from handover
                    where fav = false and at < now() - interval '30 days'`);
         }
-        return q(`select id, body, photos, fav, at, edited_at from ${type} order by at desc`);
+        return q(`select id, title, body, photos, fav, at, edited_at
+                  from ${type} order by at desc`);
       });
       return res.status(200).json({ items: rows });
     }
@@ -29,12 +30,15 @@ export default async function handler(req, res) {
             await q(`update ${type} set fav = $1 where id = $2`, [!!b.fav, b.id]);
             return {};
           }
-          await q(`update ${type} set body = $1, photos = $2, edited_at = now() where id = $3`,
-                  [b.body || '', b.photos || [], b.id]);
+          await q(`update ${type}
+                   set title = $1, body = $2, photos = $3, edited_at = now()
+                   where id = $4`,
+                  [b.title || '', b.body || '', b.photos || [], b.id]);
           return {};
         }
-        const rows = await q(`insert into ${type} (body, photos) values ($1, $2) returning id, at`,
-                             [b.body || '', b.photos || []]);
+        const rows = await q(`insert into ${type} (title, body, photos)
+                             values ($1, $2, $3) returning id, at`,
+                             [b.title || '', b.body || '', b.photos || []]);
         return { id: rows[0].id, at: rows[0].at };
       });
       return res.status(200).json(Object.assign({ ok: true }, out));
