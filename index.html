@@ -1322,7 +1322,18 @@
     line-height: 1.5;
     font-weight: 600;
   }
-  #homeHo .row-sub { margin-top: var(--space-1); }
+  /* 제목과 아래 한 줄이 한 줄에 붙어 나오지 않게 각자 줄을 갖게 한다
+     (span 은 기본이 inline 이라 짧으면 같은 줄에 얹힌다) */
+  #homeHo .row-title { display: block; }
+  #homeHo .row-sub {
+    display: block;
+    margin-top: var(--space-1);
+  }
+  /* 건수와 화살표는 가운데가 아니라 제목 줄에 맞춘다 */
+  #homeHo .row { align-items: flex-start; }
+  #homeHo .badge-mark { align-self: center; }
+  #homeHo .row-value,
+  #homeHo .chev { align-self: flex-start; margin-top: 2px; }
 
   .list-header.with-action { align-items: center; }
   .head-right {
@@ -2204,7 +2215,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0537';
+    var BUILD = '20260819.0542';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
