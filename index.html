@@ -1261,6 +1261,16 @@
     font-weight: 600;
   }
   .ho-fav.is-on { color: var(--amber-500); }
+  .ho-acts { display: flex; align-items: center; gap: var(--space-2); }
+  .ho-edit {
+    flex: none;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-s);
+    color: var(--tds-fg-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 600;
+  }
   #homeHo .row-sub { margin-top: var(--space-1); }
 
   .ho-note {
@@ -2766,8 +2776,10 @@
     var hoInput  = document.getElementById('hoInput');
     var hoCount  = document.getElementById('hoPhotoCount');
     var hoSubmit = document.getElementById('hoSubmit');
+    var hoSheetTitle = document.getElementById('hoSheetTitle');
 
     var hoDraft   = { photos: [] };
+    var hoEditId  = null;   /* null 이면 새 글 */
     var hoUrls    = [];   /* 목록에 띄운 blob 주소 — 다시 그릴 때 반납한다 */
     var hoShots   = {};
 
@@ -2853,7 +2865,8 @@
       hoShots[p.id] = shots;
 
       return '<div class="ho-item">' +
-               '<p class="ho-when t-caption">' + hoWhen(p.at, withDate) + '</p>' +
+               '<p class="ho-when t-caption">' + hoWhen(p.at, withDate) +
+                 (p.editedAt ? ' · 수정됨' : '') + '</p>' +
                (p.text ? '<p class="ho-text t-body1">' + esc(p.text) + '</p>' : '') +
                (media ? '<div class="row-photos">' + media + '</div>' : '') +
                '<div class="ho-foot">' +
@@ -2862,8 +2875,12 @@
                    'aria-pressed="' + (p.fav ? 'true' : 'false') + '">' +
                    (p.fav ? STAR_FILL : STAR_LINE) + (p.fav ? '중요' : '중요 표시') +
                  '</button>' +
-                 '<button class="post-del pressable" type="button" ' +
-                   'data-hodel="' + p.id + '">삭제</button>' +
+                 '<span class="ho-acts">' +
+                   '<button class="ho-edit pressable" type="button" ' +
+                     'data-hoedit="' + p.id + '">수정</button>' +
+                   '<button class="post-del pressable" type="button" ' +
+                     'data-hodel="' + p.id + '">삭제</button>' +
+                 '</span>' +
                '</div>' +
              '</div>';
     }
@@ -2916,6 +2933,10 @@
 
       VIEWS.handover.querySelectorAll('[data-hofav]').forEach(function (b) {
         b.addEventListener('click', function () { toggleFav(parseInt(b.dataset.hofav, 10)); });
+      });
+
+      VIEWS.handover.querySelectorAll('[data-hoedit]').forEach(function (b) {
+        b.addEventListener('click', function () { openHoSheet(parseInt(b.dataset.hoedit, 10)); });
       });
 
       renderHomeHo(fav, today);
@@ -3057,15 +3078,41 @@
 
     hoText.addEventListener('input', validateHo);
 
-    function openHoSheet() {
+    /* id 를 주면 그 글을 고치는 창, 안 주면 새로 쓰는 창 */
+    function openHoSheet(id) {
       hoDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
       hoDraft = { photos: [] };
+      hoEditId = null;
       hoText.value = '';
       hoInput.value = '';
-      renderHoPhotos();
-      validateHo();
-      hoScrim.classList.add('is-open');
-      hoSheet.classList.add('is-open');
+      hoSheetTitle.textContent = '인수인계 작성하기';
+      hoSubmit.textContent = '올리기';
+
+      function show() {
+        renderHoPhotos();
+        validateHo();
+        hoScrim.classList.add('is-open');
+        hoSheet.classList.add('is-open');
+      }
+
+      if (!id) { show(); return; }
+
+      withStore('handover', 'readonly', function (st) {
+        var g = st.get(id);
+        g.onsuccess = function () {
+          var rec = g.result;
+          if (!rec) { show(); return; }
+          hoEditId = id;
+          hoText.value = rec.text || '';
+          hoDraft.photos = (rec.photos || []).map(function (b) {
+            return { blob: b, url: URL.createObjectURL(b) };
+          });
+          hoSheetTitle.textContent = '인수인계 수정';
+          hoSubmit.textContent = '수정 완료';
+          show();
+        };
+        g.onerror = function () { show(); };
+      });
     }
     function closeHoSheet() {
       hoScrim.classList.remove('is-open');
@@ -3076,28 +3123,49 @@
     hoSubmit.addEventListener('click', function () {
       if (hoSubmit.disabled) return;
 
-      var rec = {
-        id: Date.now(),
-        text: hoText.value.trim(),
-        at: new Date().toISOString(),
-        fav: false,
-        photos: hoDraft.photos.map(function (p) { return p.blob; })
-      };
+      var text = hoText.value.trim();
+      var blobs = hoDraft.photos.map(function (p) { return p.blob; });
+      var editing = hoEditId;
+
+      function done(msg) {
+        hoDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
+        hoDraft = { photos: [] };
+        hoEditId = null;
+        closeHoSheet();
+        renderHandover();
+        toast(msg);
+      }
 
       withStore('handover', 'readwrite', function (st) {
-        var r = st.add(rec);
-        r.onsuccess = function () {
-          hoDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
-          hoDraft = { photos: [] };
-          closeHoSheet();
-          renderHandover();
-          toast('인수인계를 올렸어요');
+        if (!editing) {
+          var r = st.add({
+            id: Date.now(),
+            text: text,
+            at: new Date().toISOString(),
+            fav: false,
+            photos: blobs
+          });
+          r.onsuccess = function () { done('인수인계를 올렸어요'); };
+          r.onerror = function () { toast('올리지 못했어요. 사진을 줄여주세요'); };
+          return;
+        }
+
+        /* 올린 시각과 중요 표시는 그대로 두고 내용만 바꾼다 */
+        var g = st.get(editing);
+        g.onsuccess = function () {
+          var rec = g.result;
+          if (!rec) { toast('이미 지워진 글이에요'); return; }
+          rec.text = text;
+          rec.photos = blobs;
+          rec.editedAt = new Date().toISOString();
+          var p = st.put(rec);
+          p.onsuccess = function () { done('인수인계를 수정했어요'); };
+          p.onerror = function () { toast('수정하지 못했어요. 사진을 줄여주세요'); };
         };
-        r.onerror = function () { toast('올리지 못했어요. 사진을 줄여주세요'); };
       });
     });
 
-    document.getElementById('openHo').addEventListener('click', openHoSheet);
+    document.getElementById('openHo').addEventListener('click', function () { openHoSheet(); });
     document.getElementById('hoClose').addEventListener('click', closeHoSheet);
     hoScrim.addEventListener('click', closeHoSheet);
 
