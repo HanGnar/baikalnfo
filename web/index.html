@@ -1664,8 +1664,11 @@
     .hero { padding-top: var(--space-8); }
     .btn-xl { max-width: 340px; }
 
-    /* 남는 폭을 단으로 나눠 채운다. 접힌 칸은 자리를 안 차지한다. */
-    #homeView, #hoView {
+    /* 남는 폭을 단으로 나눠 채운다. 접힌 칸은 자리를 안 차지한다.
+       :not([hidden]) 이 꼭 필요하다 — ID 규칙이 숨김 규칙을 이겨버려서
+       안 보여야 할 탭까지 같이 그려진다. */
+    #homeView:not([hidden]),
+    #hoView:not([hidden]) {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
       align-items: start;
@@ -1673,7 +1676,9 @@
     #homeView > .hero, #hoView > .hero,
     #hoView > .ho-write { grid-column: 1 / -1; }
 
-    #memoView > section { grid-column: 1 / -1; }
+    /* 혹시 모를 경우를 위한 이중 잠금 */
+    #homeView[hidden], #hoView[hidden], #memoView[hidden] { display: none; }
+
     .mm-grid { grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); }
 
     /* ---------- 상세·게시판은 본문 자리에만 ---------- */
@@ -1752,7 +1757,8 @@
 
   /* 아주 넓은 화면에서는 글줄이 너무 길어지지 않게 단을 하나 더 준다 */
   @media (min-width: 1500px) {
-    #homeView, #hoView {
+    #homeView:not([hidden]),
+    #hoView:not([hidden]) {
       grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
     }
     .mm-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
