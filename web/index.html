@@ -230,8 +230,9 @@
      닫은 뒤에 상단 구분선만 남는다. 덮여 있는 동안은 잠가둔다. */
   .app.is-locked > .scroll { overflow: hidden; }
 
+  /* 화면은 언제나 꽉 채운다 — 가운데 세워두지 않는다 */
   @media (min-width: 600px) {
-    .app { max-width: 430px; margin: 0 auto; border-inline: 1px solid var(--tds-line-default); }
+    .app > .scroll { padding-left: var(--space-8); padding-right: var(--space-8); }
   }
 
   /* ---------- top-app-bar (56pt · 좌측 정렬 타이틀) ---------- */
@@ -1562,6 +1563,200 @@
   /* 등장 — 320ms 이내, 오버슈트 없음 */
   .rise { opacity: 0; transform: translateY(6px); animation: rise var(--dur-slow) var(--ease-out) forwards; }
   @keyframes rise { to { opacity: 1; transform: none; } }
+
+
+  /* ============================================================
+     마우스 — 손가락에는 없는 '올려둔 상태'
+     ============================================================ */
+  @media (hover: hover) and (pointer: fine) {
+    .pressable:hover::after  { opacity: .05; }
+    .pressable:active::after { opacity: 1; }
+
+    button.row:hover,
+    .mm-card:hover,
+    .key-card:hover,
+    .drawer-item:hover,
+    .ho-more:hover           { background: var(--tds-bg-secondary); }
+
+    .tab:hover               { color: var(--tds-fg-secondary); }
+    .tab[aria-current="page"]:hover { color: var(--tds-fg-primary); }
+
+    .btn-cta:hover, .btn-xl:hover { background: var(--blue-600); }
+    .dlg-btn.danger:hover    { filter: brightness(.94); }
+    .ho-fav:hover, .ho-edit:hover, .post-del:hover,
+    .bar-btn:hover, .sheet-close:hover, .icon-add:hover { opacity: .68; }
+  }
+
+  /* ============================================================
+     컴퓨터 화면
+     아래 탭바를 왼쪽 기둥으로 세우고, 남는 폭은 단을 나눠서 채운다.
+     마크업은 그대로 두고 배치만 바꾼다 — grid 는 순서를 안 따진다.
+     ============================================================ */
+  @media (min-width: 900px) {
+    .app {
+      --nav-w: 264px;
+      --top-h: 72px;
+      display: grid;
+      grid-template-columns: var(--nav-w) minmax(0, 1fr);
+      grid-template-rows: var(--top-h) minmax(0, 1fr);
+      width: 100%;
+      max-width: none;
+    }
+
+    /* ---------- 위쪽 띠 ---------- */
+    .topbar {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      height: var(--top-h);
+      padding: 0 var(--space-8);
+      gap: var(--space-3);
+      border-bottom: 1px solid var(--tds-line-default);
+    }
+    .brand-mark { width: 30px; height: 35px; }
+    .nav-title {
+      opacity: 1;
+      transform: none;
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    /* ---------- 왼쪽 기둥 ---------- */
+    .tabbar {
+      position: relative;
+      grid-column: 1;
+      grid-row: 2;
+      left: auto; right: auto; bottom: auto;
+      height: auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-auto-rows: 56px;
+      align-content: start;
+      gap: var(--space-1);
+      padding: var(--space-5) var(--space-4);
+      background: transparent;
+      border: 0;
+      border-right: 1px solid var(--tds-line-default);
+      border-radius: 0;
+      box-shadow: none;
+      overflow: visible;
+    }
+    .tab {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: var(--space-4);
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-l);
+      font-size: 16px;
+      line-height: 1.45;
+      letter-spacing: -0.010em;
+      font-weight: 600;
+    }
+    .tab[aria-current="page"] { background: var(--tds-bg-secondary); }
+
+    /* ---------- 본문 ---------- */
+    .app > .scroll {
+      grid-column: 2;
+      grid-row: 2;
+      padding: 0 var(--space-10) var(--space-10);
+      gap: var(--space-8);
+      align-content: start;
+    }
+    .hero { padding-top: var(--space-8); }
+    .btn-xl { max-width: 340px; }
+
+    /* 남는 폭을 단으로 나눠 채운다. 접힌 칸은 자리를 안 차지한다. */
+    #homeView, #hoView {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      align-items: start;
+    }
+    #homeView > .hero, #hoView > .hero,
+    #hoView > .ho-write { grid-column: 1 / -1; }
+
+    #memoView > section { grid-column: 1 / -1; }
+    .mm-grid { grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); }
+
+    /* ---------- 상세·게시판은 본문 자리에만 ---------- */
+    .detail, .board {
+      left: var(--nav-w);
+      top: var(--top-h);
+    }
+    .board-body > *  { max-width: 760px; }
+    .mm-full         { max-width: 680px; }
+    .mm-shots        { max-width: 560px; }
+    .board-cta .btn-cta { max-width: 340px; }
+
+    /* ---------- 작성 창은 가운데로 ---------- */
+    .sheet {
+      left: 50%; right: auto; bottom: auto; top: 50%;
+      width: 520px;
+      max-height: 86%;
+      border-radius: var(--radius-3xl);
+      box-shadow: var(--shadow-3);
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.97);
+      transition: transform var(--dur-base) var(--ease-out),
+                  opacity var(--dur-base) var(--ease);
+    }
+    .sheet.is-open { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .sheet-bar  { padding: var(--space-6) var(--space-6) var(--space-3); }
+    .sheet-body { padding: var(--space-2) var(--space-6) var(--space-6); }
+    .sheet-cta  { padding: var(--space-3) var(--space-6) var(--space-6); }
+
+    .dialog {
+      left: 50%; right: auto;
+      width: 380px;
+      transform: translate(-50%, -50%) scale(0.96);
+    }
+    .dialog.is-open { transform: translate(-50%, -50%) scale(1); }
+
+    .toast {
+      left: 50%; right: auto;
+      width: max-content;
+      max-width: 460px;
+      bottom: var(--space-8);
+      transform: translateX(-50%) translateY(8px);
+    }
+    .toast.is-on { transform: translateX(-50%); }
+
+    .drawer { width: 360px; }
+
+    /* ---------- 조작 요소: 보이는 크기 = 눌리는 크기 ---------- */
+    .back, .icon-btn, .sheet-close, .icon-add { width: 48px; height: 48px; }
+    .back        { margin-left: -12px; }
+    .icon-btn    { margin-right: -8px; }
+    .sheet-close { margin-right: -8px; }
+    .icon-add    { margin-right: -8px; }
+
+    .text-field       { min-height: 56px; }
+    .text-field input { padding: var(--space-4) 0; font-size: 18px; }
+    .memo-field, .post-field { padding: var(--space-4); }
+    .post-field textarea     { min-height: 120px; }
+
+    .segmented button { height: 48px; }
+    .pick button      { min-height: 56px; }
+    .drawer-item      { min-height: 56px; }
+    .dlg-btn          { height: 52px; }
+    .ho-more          { min-height: 52px; }
+    .btn-cta          { height: 56px; }
+
+    .photo-add, .photo-thumb { width: 88px; height: 88px; }
+    .photo-open              { width: 56px; height: 56px; }
+    .post-media { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
+
+    .ho-fav, .ho-edit, .post-del, .bar-btn { padding: 0 var(--space-4); }
+    .ho-fav   { margin-left: calc(var(--space-4) * -1); }
+    .post-del { margin-right: calc(var(--space-4) * -1); }
+    .bar-acts { margin-right: -16px; }
+  }
+
+  /* 아주 넓은 화면에서는 글줄이 너무 길어지지 않게 단을 하나 더 준다 */
+  @media (min-width: 1500px) {
+    #homeView, #hoView {
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    }
+    .mm-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
