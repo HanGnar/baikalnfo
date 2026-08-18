@@ -155,6 +155,7 @@
   body {
     margin: 0;
     position: relative;
+    overflow: hidden;        /* 문서는 안 움직인다 */
     overscroll-behavior: none;
     background: var(--tds-bg-primary);
     color: var(--tds-fg-primary);
@@ -227,12 +228,13 @@
   /* ============================================================
      APP SHELL
      ============================================================ */
-  /* 앱 상자를 화면에 못 박는다.
-     이러면 문서는 절대 안 움직이고, 상단바·하단 탭바도 제자리에 붙어 있고,
-     스크롤되는 곳은 가운데 본문 하나뿐이다. */
+  /* 앱 상자를 화면 크기에 딱 맞춘다.
+     'fixed' 로 못 박으면 아이폰 전체화면 모드에서 안쪽 스크롤이 먹통이 된다.
+     높이를 맞추는 것만으로 같은 결과(문서 안 움직임)를 얻는다. */
   .app {
-    position: fixed;
-    inset: 0;
+    position: relative;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -297,7 +299,6 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    touch-action: pan-y;      /* 세로로 미는 건 이 상자가 받는다 */
     overscroll-behavior: contain;
     padding: 0 var(--space-6) var(--space-8);
     display: flex;
@@ -2182,7 +2183,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0511';
+    var BUILD = '20260819.0516';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
