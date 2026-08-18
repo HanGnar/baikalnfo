@@ -1273,6 +1273,115 @@
   }
   #homeHo .row-sub { margin-top: var(--space-1); }
 
+  /* ---------- 메모 격자 ---------- */
+  .mm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+  .mm-empty {
+    grid-column: 1 / -1;
+    padding: var(--space-8) 0;
+    text-align: center;
+    color: var(--tds-fg-tertiary);
+    background: var(--tds-bg-primary);
+    border: 1px solid var(--tds-line-default);
+    border-radius: var(--radius-2xl);
+  }
+  .mm-card {
+    aspect-ratio: 1 / 1;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    background: var(--tds-bg-primary);
+    border: 1px solid var(--tds-line-default);
+    border-radius: var(--radius-2xl);
+    overflow: hidden;
+  }
+  .mm-card .thumb {
+    flex: none;
+    height: 46%;
+    background: var(--grey-100);
+  }
+  .mm-card .thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .mm-card .body {
+    flex: 1;
+    min-height: 0;
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    display: flex;
+    flex-direction: column;
+  }
+  .mm-card .txt {
+    flex: 1;
+    min-height: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    overflow: hidden;
+    word-break: break-word;
+    font-size: 15px;
+    line-height: 1.45;
+    letter-spacing: -0.010em;
+    font-weight: 500;
+  }
+  .mm-card.has-shot .txt { -webkit-line-clamp: 2; }
+  .mm-card .when {
+    flex: none;
+    margin-top: var(--space-2);
+    color: var(--tds-fg-tertiary);
+  }
+
+  /* ---------- 메모 상세 ---------- */
+  .mm-detail { display: flex; flex-direction: column; }
+  .mm-full {
+    margin-top: var(--space-2);
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 17px;
+    line-height: 1.6;
+    letter-spacing: -0.005em;
+  }
+  .mm-shots {
+    margin-top: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .mm-shots button {
+    width: 100%;
+    padding: 0;
+    display: block;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--tds-line-default);
+    overflow: hidden;
+  }
+  .mm-shots img { width: 100%; height: auto; display: block; }
+  .mm-acts {
+    margin-top: var(--space-8);
+    display: flex;
+    gap: var(--space-2);
+  }
+  .mm-acts button {
+    flex: 1;
+    height: 52px;
+    border-radius: var(--radius-l);
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .mm-acts .edit {
+    background: var(--tds-bg-secondary);
+    color: var(--tds-fg-primary);
+  }
+  .mm-acts .del {
+    background: var(--tds-bg-secondary);
+    color: var(--tds-fg-danger);
+  }
+
   .ho-note {
     margin-top: calc(var(--space-3) * -1);
     margin-bottom: var(--space-4);
@@ -1603,7 +1712,7 @@
         <h2 class="t-h4">작성한 메모</h2>
         <span class="group-count t-body2" id="mmCount">0</span>
       </div>
-      <div class="card" id="mmBox"></div>
+      <div class="mm-grid" id="mmBox"></div>
     </section>
 
   </main>
@@ -1637,6 +1746,16 @@
     <div class="scroll" id="detailBody">
       <h1 class="t-h1" id="detailTitle">남자 키</h1>
     </div>
+  </section>
+
+  <!-- ============ 메모 상세 ============ -->
+  <section class="detail" id="mmDetail" aria-hidden="true">
+    <div class="detail-bar">
+      <button class="back pressable" type="button" id="mmDetailBack" aria-label="뒤로">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="scroll" id="mmDetailBody"></div>
   </section>
 
   <!-- ============ 등록 시트 ============ -->
@@ -1933,7 +2052,8 @@
                     postSheet.classList.contains('is-open') ||
                     board.classList.contains('is-open') ||
                     drawer.classList.contains('is-open') ||
-                    detail.classList.contains('is-open');
+                    detail.classList.contains('is-open') ||
+                    mmDetail.classList.contains('is-open');
       appEl.classList.toggle('is-locked', covered);
       if (!covered) sync();
     }
@@ -2450,6 +2570,7 @@
       else if (postSheet.classList.contains('is-open')) closePostSheet();
       else if (hoSheet.classList.contains('is-open')) closeHoSheet();
       else if (mmSheet.classList.contains('is-open')) closeMmSheet();
+      else if (mmDetail.classList.contains('is-open')) closeMmDetail();
       else if (sheet.classList.contains('is-open')) closeSheet();
       else if (board.classList.contains('is-open')) closeBoard();
       else if (drawer.classList.contains('is-open')) closeDrawer();
@@ -3269,70 +3390,120 @@
     function drawMemo(list) {
       mmUrls.forEach(function (u) { URL.revokeObjectURL(u); });
       mmUrls = [];
-      mmShots = {};
       mmCount.textContent = list.length;
 
       if (!list.length) {
-        mmBox.innerHTML = '<p class="empty t-body2">작성한 메모가 없어요</p>';
+        mmBox.innerHTML = '<p class="mm-empty t-body2">작성한 메모가 없어요</p>';
         return;
       }
 
       mmBox.innerHTML = list.map(function (p) {
-        var shots = [];
-        var media = (p.photos || []).map(function (blob, i) {
-          var url = URL.createObjectURL(blob);
+        var first = (p.photos && p.photos.length) ? p.photos[0] : null;
+        var thumb = '';
+        if (first) {
+          var url = URL.createObjectURL(first);
           mmUrls.push(url);
-          shots.push(url);
-          return '<button class="photo-open pressable" type="button" ' +
-                   'data-mmshot="' + p.id + ':' + i + '" aria-label="사진 크게 보기">' +
-                   '<img src="' + url + '" alt="">' +
-                   '<span class="zoom">' + ZOOM + '</span>' +
-                 '</button>';
-        }).join('');
-        mmShots[p.id] = shots;
+          thumb = '<span class="thumb"><img src="' + url + '" alt=""></span>';
+        }
+        /* 사진만 있는 메모는 글자 자리가 비어 허전하다 */
+        var txt = p.text ? esc(p.text) : (first ? '사진 ' + p.photos.length + '장' : '');
 
-        return '<div class="ho-item">' +
-                 '<p class="ho-when t-caption">' + hoWhen(p.at, true) +
-                   (p.editedAt ? ' · 수정됨' : '') + '</p>' +
-                 (p.text ? '<p class="ho-text t-body1">' + esc(p.text) + '</p>' : '') +
-                 (media ? '<div class="row-photos">' + media + '</div>' : '') +
-                 '<div class="ho-foot">' +
-                   '<span></span>' +
-                   '<span class="ho-acts">' +
-                     '<button class="ho-edit pressable" type="button" ' +
-                       'data-mmedit="' + p.id + '">수정</button>' +
-                     '<button class="post-del pressable" type="button" ' +
-                       'data-mmdel="' + p.id + '">삭제</button>' +
-                   '</span>' +
-                 '</div>' +
-               '</div>';
+        return '<button class="mm-card pressable' + (first ? ' has-shot' : '') + '" ' +
+                 'type="button" data-mmopen="' + p.id + '">' +
+                 thumb +
+                 '<span class="body">' +
+                   '<span class="txt">' + txt + '</span>' +
+                   '<span class="when t-caption">' + hoWhen(p.at, true) + '</span>' +
+                 '</span>' +
+               '</button>';
       }).join('');
 
-      mmBox.querySelectorAll('[data-mmshot]').forEach(function (b) {
+      mmBox.querySelectorAll('[data-mmopen]').forEach(function (b) {
+        b.addEventListener('click', function () { openMmDetail(parseInt(b.dataset.mmopen, 10)); });
+      });
+    }
+
+    /* ---------- 상세 ---------- */
+    var mmDetail     = document.getElementById('mmDetail');
+    var mmDetailBody = document.getElementById('mmDetailBody');
+    var mmShotUrls   = [];
+    var mmOpenId     = null;
+
+    function openMmDetail(id) {
+      withStore('memo', 'readonly', function (st) {
+        var g = st.get(id);
+        g.onsuccess = function () {
+          var rec = g.result;
+          if (!rec) { toast('이미 지워진 메모예요'); return; }
+          drawMmDetail(rec);
+          mmOpenId = id;
+          mmDetail.classList.add('is-open');
+          mmDetail.setAttribute('aria-hidden', 'false');
+          mmDetailBody.scrollTop = 0;
+          syncLock();
+        };
+      });
+    }
+
+    function closeMmDetail() {
+      mmDetail.classList.remove('is-open');
+      mmDetail.setAttribute('aria-hidden', 'true');
+      mmOpenId = null;
+      syncLock();
+    }
+
+    function drawMmDetail(rec) {
+      mmShotUrls.forEach(function (u) { URL.revokeObjectURL(u); });
+      mmShotUrls = [];
+
+      var shots = (rec.photos || []).map(function (blob) {
+        var url = URL.createObjectURL(blob);
+        mmShotUrls.push(url);
+        return url;
+      });
+
+      mmDetailBody.innerHTML =
+        '<div class="mm-detail">' +
+          '<p class="ho-when t-caption">' + hoWhen(rec.at, true) +
+            (rec.editedAt ? ' · 수정됨' : '') + '</p>' +
+          (rec.text ? '<p class="mm-full">' + esc(rec.text) + '</p>' : '') +
+          (shots.length
+            ? '<div class="mm-shots">' + shots.map(function (u, i) {
+                return '<button class="pressable" type="button" data-mmbig="' + i + '" ' +
+                         'aria-label="사진 ' + (i + 1) + ' 크게 보기">' +
+                         '<img src="' + u + '" alt=""></button>';
+              }).join('') + '</div>'
+            : '') +
+          '<div class="mm-acts">' +
+            '<button class="edit pressable" type="button" id="mmDetailEdit">수정</button>' +
+            '<button class="del pressable" type="button" id="mmDetailDel">삭제</button>' +
+          '</div>' +
+        '</div>';
+
+      mmDetailBody.querySelectorAll('[data-mmbig]').forEach(function (b) {
         b.addEventListener('click', function () {
-          var q = b.dataset.mmshot.split(':');
-          openViewer(mmShots[q[0]], parseInt(q[1], 10));
+          openViewer(shots, parseInt(b.dataset.mmbig, 10));
         });
       });
 
-      mmBox.querySelectorAll('[data-mmedit]').forEach(function (b) {
-        b.addEventListener('click', function () { openMmSheet(parseInt(b.dataset.mmedit, 10)); });
+      document.getElementById('mmDetailEdit').addEventListener('click', function () {
+        openMmSheet(rec.id);
       });
 
-      mmBox.querySelectorAll('[data-mmdel]').forEach(function (b) {
-        b.addEventListener('click', function () {
-          var id = parseInt(b.dataset.mmdel, 10);
-          confirmDialog('이 메모를 지울까요?', '지운 메모는 되돌릴 수 없어요.', function () {
-            withStore('memo', 'readwrite', function (st) {
-              st.delete(id).onsuccess = function () {
-                renderMemo();
-                toast('메모를 지웠어요');
-              };
-            });
+      document.getElementById('mmDetailDel').addEventListener('click', function () {
+        confirmDialog('이 메모를 지울까요?', '지운 메모는 되돌릴 수 없어요.', function () {
+          withStore('memo', 'readwrite', function (st) {
+            st.delete(rec.id).onsuccess = function () {
+              closeMmDetail();
+              renderMemo();
+              toast('메모를 지웠어요');
+            };
           });
         });
       });
     }
+
+    document.getElementById('mmDetailBack').addEventListener('click', closeMmDetail);
 
     /* ---------- 작성 ---------- */
     function validateMm() {
@@ -3445,6 +3616,7 @@
         mmEditId = null;
         closeMmSheet();
         renderMemo();
+        if (mmOpenId) openMmDetail(mmOpenId);   /* 상세를 열어둔 채 고쳤다면 갱신 */
         toast(msg);
       }
 
