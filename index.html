@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 
 <!-- TDS 핸드오프 번들은 light 모드 카노니컬 값만 제공한다 (Known Gaps: 다크 alias 미공개) -->
 <meta name="color-scheme" content="light">
@@ -156,6 +156,7 @@
     margin: 0;
     position: relative;
     overflow: hidden;        /* 문서는 안 움직인다 */
+    touch-action: manipulation;   /* 두 번 톡톡 쳐서 확대되는 것 방지 */
     overscroll-behavior: none;
     background: var(--tds-bg-primary);
     color: var(--tds-fg-primary);
@@ -2183,7 +2184,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0516';
+    var BUILD = '20260819.0519';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
