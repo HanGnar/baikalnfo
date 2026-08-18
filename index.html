@@ -147,17 +147,14 @@
      ============================================================ */
   * { box-sizing: border-box; }
 
-  /* 홈 화면 앱(전체화면)으로 열면 문서 자체가 스크롤 주체가 되려다
-     안쪽 상자의 스크롤을 삼켜버린다. 문서를 아예 고정해서
-     스크롤할 곳을 안쪽 하나로 못 박는다. */
-  html, body { height: 100%; }
+  /* 홈 화면 앱(전체화면)에서는 문서가 스크롤 주체가 되려다 안쪽 상자의
+     스크롤을 삼킨다. 문서에 높이를 못 박아 넘칠 것을 없애고,
+     앱 상자를 화면에 붙여서 스크롤할 곳을 안쪽 하나로 확정한다. */
+  html, body { height: 100%; overflow: hidden; }
 
   body {
     margin: 0;
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    overflow: hidden;
+    position: relative;
     overscroll-behavior: none;
     background: var(--tds-bg-primary);
     color: var(--tds-fg-primary);
@@ -231,11 +228,8 @@
      APP SHELL
      ============================================================ */
   .app {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    height: 100dvh;
-    height: 100%;        /* 고정된 문서 기준 — 홈 화면 앱에서 흔들리지 않는다 */
+    position: absolute;
+    inset: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -300,6 +294,7 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    touch-action: pan-y;      /* 세로로 미는 건 이 상자가 받는다 */
     overscroll-behavior: contain;
     padding: 0 var(--space-6) var(--space-8);
     display: flex;
@@ -1125,6 +1120,12 @@
   }
   .drawer-item .label { flex: 1; }
   .drawer-item .chev { color: var(--grey-400); }
+  .drawer-ver {
+    margin-top: auto;
+    padding: var(--space-4) var(--space-6);
+    color: var(--tds-fg-quaternary);
+    font-variant-numeric: tabular-nums;
+  }
 
   /* ============================================================
      관리자에게 연락하기
@@ -2010,6 +2011,7 @@
         <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
       </button>
     </nav>
+    <p class="drawer-ver t-caption" id="buildTag"></p>
   </aside>
 
   <!-- ============ 관리자에게 연락하기 (게시판) ============ -->
@@ -2173,6 +2175,8 @@
 <script>
   (function () {
     'use strict';
+
+    var BUILD = '20260819.0502';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
@@ -2909,6 +2913,9 @@
       drawer.setAttribute('aria-hidden', 'true');
       syncLock();
     }
+
+    /* 홈 화면 앱이 예전 파일을 붙들고 있는지 눈으로 확인하는 표시 */
+    document.getElementById('buildTag').textContent = 'v' + BUILD;
 
     document.getElementById('menuBtn').addEventListener('click', openDrawer);
     document.getElementById('drawerClose').addEventListener('click', closeDrawer);
