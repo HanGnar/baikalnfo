@@ -1273,6 +1273,22 @@
   }
   #homeHo .row-sub { margin-top: var(--space-1); }
 
+  .list-header.with-action { align-items: center; }
+  .head-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .icon-add {
+    width: 32px; height: 32px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-full);
+    background: var(--tds-bg-secondary);
+    color: var(--tds-fg-secondary);
+  }
+
   /* ---------- 메모 격자 ---------- */
   .mm-grid {
     display: grid;
@@ -1705,12 +1721,15 @@
       <p class="hero-sub t-body2 js-today">2026년 8월 18일 화요일</p>
     </div>
 
-    <button class="btn-xl pressable ho-write" type="button" id="openMm">메모 작성하기</button>
-
     <section>
-      <div class="list-header">
+      <div class="list-header with-action">
         <h2 class="t-h4">작성한 메모</h2>
-        <span class="group-count t-body2" id="mmCount">0</span>
+        <span class="head-right">
+          <span class="group-count t-body2" id="mmCount">0</span>
+          <button class="icon-add pressable" type="button" id="openMm" aria-label="메모 작성하기">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </span>
       </div>
       <div class="mm-grid" id="mmBox"></div>
     </section>
