@@ -9,8 +9,14 @@ export default async function handler(req, res) {
     if (!OK.includes(type)) return res.status(400).json({ error: 'bad_type' });
 
     if (req.method === 'GET') {
-      const rows = await withDb(q =>
-        q(`select id, body, photos, fav, at, edited_at from ${type} order by at desc`));
+      const rows = await withDb(async (q) => {
+        /* 인수인계는 한 달이 지나면 지운다. 중요 표시가 켜진 것은 남긴다. */
+        if (type === 'handover') {
+          await q(`delete from handover
+                   where fav = false and at < now() - interval '30 days'`);
+        }
+        return q(`select id, body, photos, fav, at, edited_at from ${type} order by at desc`);
+      });
       return res.status(200).json({ items: rows });
     }
 

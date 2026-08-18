@@ -2054,6 +2054,7 @@
         else b.removeAttribute('aria-current');
       });
       VIEWS[name].scrollTop = 0;
+      if (name === 'home') { loadKeys(); renderHandover(); }
       if (name === 'handover') renderHandover();
       if (name === 'memo') renderMemo();
       sync();
@@ -2108,31 +2109,46 @@
     var TOTAL  = { m: 200, f: 207 };
     var GENDER = { m: '남자', f: '여자' };
     var STATUS = { ok: '정상', lost: '분실', broken: '고장', etc: '기타' };
-    var STORE  = 'baikal.keys.v1';
+    var data = { m: {}, f: {} };
 
-    var data = { m: {}, f: {}, log: [] };
+    /* ==========================================================
+       서버와 주고받기
+       모든 내용이 서버 한 곳에 있어서 누가 바꾸든 모두에게 같이 보인다.
+       ========================================================== */
+    function apiGet(path) {
+      return fetch(path, { cache: 'no-store' }).then(function (r) { return r.json(); });
+    }
+    function apiPost(path, obj) {
+      return fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj)
+      }).then(function (r) { return r.json(); });
+    }
+    function apiDel(path) {
+      return fetch(path, { method: 'DELETE' }).then(function (r) { return r.json(); });
+    }
 
-    try {
-      var saved = localStorage.getItem(STORE);
-      if (saved) {
-        var p = JSON.parse(saved);
-        data.m = p.m || {};
-        data.f = p.f || {};
-        data.log = p.log || [];
-      }
-    } catch (e) { /* 저장소를 못 쓰면 이번 세션에서만 동작 */ }
+    /* 인터넷이 끊기면 조용히 실패하지 않고 알려준다 */
+    function netFail(e) {
+      toast('서버에 연결하지 못했어요. 인터넷을 확인해주세요');
+      return null;
+    }
 
-    /* 메모가 생기기 전에는 상태를 문자열로 저장했다 — 객체 형태로 맞춰준다 */
-    ['m', 'f'].forEach(function (g) {
-      Object.keys(data[g]).forEach(function (no) {
-        if (typeof data[g][no] === 'string') data[g][no] = { s: data[g][no], memo: '' };
-      });
-    });
-
-    /* 사진이 들어가면 용량이 커진다 — 저장 실패 여부를 돌려준다 */
-    function persist() {
-      try { localStorage.setItem(STORE, JSON.stringify(data)); return true; }
-      catch (e) { return false; }
+    function loadKeys() {
+      return apiGet('/api/keys').then(function (r) {
+        if (!r || !r.keys) return;
+        data = { m: {}, f: {} };
+        r.keys.forEach(function (k) {
+          data[k.gender][k.no] = {
+            s: k.status,
+            memo: k.memo || '',
+            photos: k.photos || []
+          };
+        });
+        render();
+        if (detailG) renderDetail(detailG);
+      }).catch(netFail);
     }
 
     function countOf(g) {
@@ -2427,12 +2443,13 @@
     }
 
     /* 원본 그대로 저장하면 저장 공간이 금방 찬다 — 1024px·품질 0.7로 줄인다 */
-    function shrink(file, done) {
+    /* 폰 사진은 한 장에 몇 MB나 된다 — 1600px·품질 0.75 로 줄여서 올린다 */
+    function toJpeg(file, done) {
       var reader = new FileReader();
       reader.onload = function (e) {
         var img = new Image();
         img.onload = function () {
-          var max = 1024, w = img.width, h = img.height;
+          var max = 1600, w = img.width, h = img.height;
           if (w > max || h > max) {
             var r = Math.min(max / w, max / h);
             w = Math.round(w * r);
@@ -2441,7 +2458,7 @@
           var cv = document.createElement('canvas');
           cv.width = w; cv.height = h;
           cv.getContext('2d').drawImage(img, 0, 0, w, h);
-          done(cv.toDataURL('image/jpeg', 0.7));
+          cv.toBlob(function (b) { done(b); }, 'image/jpeg', 0.75);
         };
         img.onerror = function () { done(null); };
         img.src = e.target.result;
@@ -2450,22 +2467,52 @@
       reader.readAsDataURL(file);
     }
 
-    photoInput.addEventListener('change', function () {
-      var files = Array.prototype.slice.call(photoInput.files || []);
-      var room = MAX_PHOTOS - draft.photos.length;
+    /* 서버에 올리고 공개 주소를 돌려준다 */
+    function uploadPhoto(file, done) {
+      toJpeg(file, function (blob) {
+        if (!blob) { done(null); return; }
+        fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'image/jpeg' },
+          body: blob
+        }).then(function (r) { return r.json(); })
+          .then(function (r) { done(r && r.url ? r.url : null); })
+          .catch(function () { done(null); });
+      });
+    }
+
+    /* 여러 장을 순서대로 올린다. 하나라도 실패하면 알려준다. */
+    function uploadMany(files, into, after) {
+      var left = files.length;
+      var failed = 0;
+      if (!left) { after(); return; }
+      toast('사진을 올리는 중이에요…');
+      files.forEach(function (f) {
+        uploadPhoto(f, function (url) {
+          if (url) into.push(url); else failed++;
+          if (--left === 0) {
+            if (failed) toast(failed + '장은 올리지 못했어요');
+            after();
+          }
+        });
+      });
+    }
+
+    function pickedFiles(input, current) {
+      var files = Array.prototype.slice.call(input.files || [])
+                    .filter(function (f) { return f.type.indexOf('image/') === 0; });
+      var room = MAX_PHOTOS - current.length;
       if (files.length > room) {
         toast('사진은 최대 ' + MAX_PHOTOS + '장까지 넣을 수 있어요');
         files = files.slice(0, room);
       }
-      var left = files.length;
-      if (!left) { photoInput.value = ''; return; }
+      return files;
+    }
 
-      files.forEach(function (f) {
-        shrink(f, function (src) {
-          if (src) draft.photos.push(src);
-          if (--left === 0) { renderPhotos(); photoInput.value = ''; }
-        });
-      });
+    photoInput.addEventListener('change', function () {
+      var files = pickedFiles(photoInput, draft.photos);
+      photoInput.value = '';
+      uploadMany(files, draft.photos, renderPhotos);
     });
 
     /* ==========================================================
@@ -2631,22 +2678,26 @@
       var memo = memoInput.value.trim();
       var photos = draft.photos.slice();
 
-      if (s === 'ok') delete data[g][no];
-      else data[g][no] = { s: s, memo: memo, photos: photos };
+      submitBtn.disabled = true;
+      submitBtn.textContent = '저장 중…';
 
-      data.log.unshift({ g: g, no: no, s: s, memo: memo, at: new Date().toISOString() });
-      data.log = data.log.slice(0, 30);
-
-      var saved = persist();
-      render();
-      if (detailG) renderDetail(detailG);
-      closeSheet();
-
-      if (saved) {
+      apiPost('/api/keys', {
+        gender: g, no: no, status: s, memo: memo, photos: photos
+      }).then(function (r) {
+        submitBtn.textContent = '등록하기';
+        if (!r || r.error) {
+          submitBtn.disabled = false;
+          toast('저장하지 못했어요. 잠시 후 다시 해주세요');
+          return;
+        }
+        closeSheet();
         toast(GENDER[g] + ' ' + pad(no) + '번을 ' + STATUS[s] + '으로 등록했어요');
-      } else {
-        toast('저장 공간이 가득 찼어요. 사진을 줄여주세요');
-      }
+        loadKeys();
+      }).catch(function () {
+        submitBtn.textContent = '등록하기';
+        submitBtn.disabled = false;
+        netFail();
+      });
     });
 
     /* ==========================================================
@@ -2674,10 +2725,6 @@
 
     /* ==========================================================
        관리자에게 연락하기 — 게시판
-
-       사진은 줄여도 여러 장이면 localStorage(5MB) 를 금방 넘긴다.
-       키 관리 데이터와 자리를 다투지 않도록 이 화면만 IndexedDB 에
-       사진을 파일 그대로(Blob) 담는다.
        ========================================================== */
     var board     = document.getElementById('board');
     var boardBody = document.getElementById('boardBody');
@@ -2690,9 +2737,8 @@
     var postCount  = document.getElementById('postPhotoCount');
     var postSubmit = document.getElementById('postSubmit');
 
-    var CDB = 'baikal.contact';
-    var postDraft = { photos: [] };   /* 남기기 전에 담아둔 사진 */
-    var liveUrls = [];                /* 목록에 띄운 blob 주소 — 다시 그릴 때 반납한다 */
+    var boardPosts = [];
+    var postDraft  = { photos: [] };
 
     var XMARK = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" ' +
                 'stroke="currentColor" stroke-width="3.2" stroke-linecap="round" ' +
@@ -2704,27 +2750,6 @@
         'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
         '<path d="M12 6v12M6 12h12"/></svg>추가</button>';
 
-    /* 연락하기 글은 'posts', 인수인계는 'handover' 에 따로 담는다.
-       쓰고 나면 연결을 닫아야 다음에 버전을 올릴 때 막히지 않는다. */
-    function withStore(name, mode, run) {
-      var req = indexedDB.open(CDB, 3);
-      req.onupgradeneeded = function () {
-        var d = req.result;
-        if (!d.objectStoreNames.contains('posts')) d.createObjectStore('posts', { keyPath: 'id' });
-        if (!d.objectStoreNames.contains('handover')) d.createObjectStore('handover', { keyPath: 'id' });
-        if (!d.objectStoreNames.contains('memo')) d.createObjectStore('memo', { keyPath: 'id' });
-      };
-      req.onsuccess = function () {
-        var d = req.result;
-        var t = d.transaction(name, mode);
-        t.oncomplete = function () { d.close(); };
-        t.onabort    = function () { d.close(); };
-        run(t.objectStore(name));
-      };
-      req.onerror   = function () { toast('저장소를 열지 못했어요'); };
-      req.onblocked = function () { toast('다른 화면에서 쓰는 중이에요. 잠시 후 다시 해주세요'); };
-    }
-
     function fmtWhen(iso) {
       var d = new Date(iso);
       var h = d.getHours();
@@ -2735,73 +2760,57 @@
 
     /* ---------- 목록 ---------- */
     function renderBoard() {
-      withStore('posts', 'readonly', function (st) {
-        var req = st.getAll();
-        req.onsuccess = function () {
-          /* 최근 글이 맨 위 */
-          drawPosts(req.result.slice().sort(function (a, b) { return b.id - a.id; }));
-        };
-        req.onerror = function () { toast('불러오지 못했어요'); };
-      });
+      apiGet('/api/items?type=posts').then(function (r) {
+        if (!r || !r.items) { netFail(); return; }
+        boardPosts = r.items;
+        drawPosts(r.items);
+      }).catch(netFail);
     }
 
     function drawPosts(list) {
-      liveUrls.forEach(function (u) { URL.revokeObjectURL(u); });
-      liveUrls = [];
-
       if (!list.length) {
         boardBody.innerHTML = '<p class="board-empty t-body2">아직 올라온 글이 없어요.<br>' +
                               '아래에서 첫 글을 남겨보세요.</p>';
         return;
       }
 
-      var shotsOf = {};   /* 크게 보기용 — 글마다 사진 주소 묶음 */
-      var html = '';
-
-      list.forEach(function (p) {
-        var shots = [];
-        var media = (p.photos || []).map(function (blob, i) {
-          var url = URL.createObjectURL(blob);
-          liveUrls.push(url);
-          shots.push(url);
+      boardBody.innerHTML = list.map(function (p) {
+        var media = (p.photos || []).map(function (url, i) {
           return '<button class="pressable" type="button" ' +
                    'data-shot="' + p.id + ':' + i + '" aria-label="사진 크게 보기">' +
                    '<img src="' + url + '" alt="">' +
                    '<span class="zoom">' + ZOOM + '</span>' +
                  '</button>';
         }).join('');
-        shotsOf[p.id] = shots;
 
-        html += '<article class="post">' +
-                  (p.text ? '<p class="post-text t-body1">' + esc(p.text) + '</p>' : '') +
-                  (media ? '<div class="post-media">' + media + '</div>' : '') +
-                  '<div class="post-foot">' +
-                    '<span class="post-time t-caption">' + fmtWhen(p.at) + '</span>' +
-                    '<button class="post-del pressable" type="button" ' +
-                      'data-del="' + p.id + '">삭제</button>' +
-                  '</div>' +
-                '</article>';
-      });
-
-      boardBody.innerHTML = html;
+        return '<article class="post">' +
+                 (p.body ? '<p class="post-text t-body1">' + esc(p.body) + '</p>' : '') +
+                 (media ? '<div class="post-media">' + media + '</div>' : '') +
+                 '<div class="post-foot">' +
+                   '<span class="post-time t-caption">' + fmtWhen(p.at) + '</span>' +
+                   '<button class="post-del pressable" type="button" ' +
+                     'data-del="' + p.id + '">삭제</button>' +
+                 '</div>' +
+               '</article>';
+      }).join('');
 
       boardBody.querySelectorAll('[data-shot]').forEach(function (b) {
         b.addEventListener('click', function () {
           var q = b.dataset.shot.split(':');
-          openViewer(shotsOf[q[0]], parseInt(q[1], 10));
+          var post = boardPosts.filter(function (x) { return String(x.id) === q[0]; })[0];
+          if (post) openViewer(post.photos, parseInt(q[1], 10));
         });
       });
 
       boardBody.querySelectorAll('[data-del]').forEach(function (b) {
         b.addEventListener('click', function () {
-          var id = parseInt(b.dataset.del, 10);
+          var id = b.dataset.del;
           confirmDialog('이 글을 지울까요?', '지운 글은 되돌릴 수 없어요.', function () {
-            withStore('posts', 'readwrite', function (st) {
-              st.delete(id).onsuccess = function () {
-                renderBoard();
-                toast('글을 지웠어요');
-              };
-            });
+            apiDel('/api/items?type=posts&id=' + id).then(function (r) {
+              if (!r || r.error) { toast('지우지 못했어요'); return; }
+              renderBoard();
+              toast('글을 지웠어요');
+            }).catch(netFail);
           });
         });
       });
@@ -2809,16 +2818,12 @@
       boardBody.scrollTop = 0;
     }
 
-    /* ---------- 글 남기기 ---------- */
-    function validatePost() {
-      postSubmit.disabled = !(postText.value.trim() || postDraft.photos.length);
-    }
-
+    /* ---------- 첨부 ---------- */
     function renderPostPhotos() {
-      var html = postDraft.photos.map(function (p, i) {
+      var html = postDraft.photos.map(function (url, i) {
         return '<button class="photo-thumb pressable" type="button" data-ppic="' + i + '" ' +
                  'aria-label="사진 ' + (i + 1) + ' 빼기">' +
-                 '<img src="' + p.url + '" alt="">' +
+                 '<img src="' + url + '" alt="">' +
                  '<span class="x">' + XMARK + '</span>' +
                '</button>';
       }).join('');
@@ -2834,7 +2839,6 @@
         b.addEventListener('click', function () {
           var i = parseInt(b.dataset.ppic, 10);
           confirmDialog('이 사진을 뺄까요?', '아직 올리기 전이라 다시 넣을 수 있어요.', function () {
-            URL.revokeObjectURL(postDraft.photos[i].url);
             postDraft.photos.splice(i, 1);
             renderPostPhotos();
             validatePost();
@@ -2843,57 +2847,22 @@
       });
     }
 
-    /* 원본 그대로 담으면 저장 공간이 금방 찬다 — 1600px · 품질 0.75 */
-    function toSmallBlob(file, done) {
-      var url = URL.createObjectURL(file);
-      var img = new Image();
-      img.onload = function () {
-        var max = 1600, w = img.width, h = img.height;
-        if (w > max || h > max) {
-          var r = Math.min(max / w, max / h);
-          w = Math.round(w * r);
-          h = Math.round(h * r);
-        }
-        var cv = document.createElement('canvas');
-        cv.width = w; cv.height = h;
-        cv.getContext('2d').drawImage(img, 0, 0, w, h);
-        URL.revokeObjectURL(url);
-        cv.toBlob(function (b) { done(b || file); }, 'image/jpeg', 0.75);
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); done(null); };
-      img.src = url;
-    }
-
     postInput.addEventListener('change', function () {
-      var files = Array.prototype.slice.call(postInput.files)
-                    .filter(function (f) { return f.type.indexOf('image/') === 0; });
-      if (!files.length) { postInput.value = ''; return; }
-
-      var room = MAX_PHOTOS - postDraft.photos.length;
-      if (files.length > room) {
-        files = files.slice(0, room);
-        toast('사진은 최대 ' + MAX_PHOTOS + '장까지 넣을 수 있어요');
-      }
-
-      var left = files.length;
-      files.forEach(function (file) {
-        toSmallBlob(file, function (blob) {
-          if (blob) {
-            postDraft.photos.push({ blob: blob, url: URL.createObjectURL(blob) });
-          }
-          if (--left === 0) {
-            renderPostPhotos();
-            validatePost();
-            postInput.value = '';
-          }
-        });
+      var files = pickedFiles(postInput, postDraft.photos);
+      postInput.value = '';
+      uploadMany(files, postDraft.photos, function () {
+        renderPostPhotos();
+        validatePost();
       });
     });
+
+    function validatePost() {
+      postSubmit.disabled = !(postText.value.trim() || postDraft.photos.length);
+    }
 
     postText.addEventListener('input', validatePost);
 
     function openPostSheet() {
-      postDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
       postDraft = { photos: [] };
       postText.value = '';
       postInput.value = '';
@@ -2912,24 +2881,22 @@
 
     postSubmit.addEventListener('click', function () {
       if (postSubmit.disabled) return;
+      postSubmit.disabled = true;
+      postSubmit.textContent = '올리는 중…';
 
-      var post = {
-        id: Date.now(),
-        text: postText.value.trim(),
-        at: new Date().toISOString(),
-        photos: postDraft.photos.map(function (p) { return p.blob; })
-      };
-
-      withStore('posts', 'readwrite', function (st) {
-        var r = st.add(post);
-        r.onsuccess = function () {
-          postDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
-          postDraft = { photos: [] };
-          closePostSheet();
-          renderBoard();
-          toast('글을 올렸어요');
-        };
-        r.onerror = function () { toast('올리지 못했어요. 사진을 줄여주세요'); };
+      apiPost('/api/items?type=posts', {
+        body: postText.value.trim(),
+        photos: postDraft.photos
+      }).then(function (r) {
+        postSubmit.textContent = '남기기';
+        if (!r || r.error) { postSubmit.disabled = false; toast('올리지 못했어요'); return; }
+        closePostSheet();
+        renderBoard();
+        toast('글을 올렸어요');
+      }).catch(function () {
+        postSubmit.textContent = '남기기';
+        postSubmit.disabled = false;
+        netFail();
       });
     });
 
@@ -2943,7 +2910,6 @@
       board.classList.add('is-open');
       board.setAttribute('aria-hidden', 'false');
       renderBoard();
-      /* 화면이 밀려 들어온 뒤에 띄운다 */
       setTimeout(function () { toast('관리자가 대학생이라 확인이 어려울 수 있음'); }, 400);
       syncLock();
     }
@@ -2965,6 +2931,9 @@
     var hoPastBox    = document.getElementById('hoPastBox');
     var hoTodayCount = document.getElementById('hoTodayCount');
     var hoPastCount  = document.getElementById('hoPastCount');
+    var hoFavSec     = document.getElementById('hoFavSec');
+    var hoFavBox     = document.getElementById('hoFavBox');
+    var hoFavCount   = document.getElementById('hoFavCount');
 
     var hoSheet  = document.getElementById('hoSheet');
     var hoScrim  = document.getElementById('hoScrim');
@@ -2975,14 +2944,9 @@
     var hoSubmit = document.getElementById('hoSubmit');
     var hoSheetTitle = document.getElementById('hoSheetTitle');
 
-    var hoDraft   = { photos: [] };
-    var hoEditId  = null;   /* null 이면 새 글 */
-    var hoUrls    = [];   /* 목록에 띄운 blob 주소 — 다시 그릴 때 반납한다 */
-    var hoShots   = {};
-
-    var hoFavSec   = document.getElementById('hoFavSec');
-    var hoFavBox   = document.getElementById('hoFavBox');
-    var hoFavCount = document.getElementById('hoFavCount');
+    var hoDraft  = { photos: [] };
+    var hoEditId = null;
+    var hoAll    = [];
 
     var STAR_PATH = 'm12 3.6 2.55 5.17 5.7.83-4.13 4.02.98 5.68L12 16.62 6.9 19.3l.98-5.68' +
                     'L3.75 9.6l5.7-.83z';
@@ -2991,7 +2955,6 @@
                     'aria-hidden="true"><path d="' + STAR_PATH + '"/></svg>';
     var STAR_FILL = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" ' +
                     'aria-hidden="true"><path d="' + STAR_PATH + '"/></svg>';
-
     var STAR_FILL_L = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" ' +
                       'aria-hidden="true"><path d="' + STAR_PATH + '"/></svg>';
     var PEN_L = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" ' +
@@ -2999,7 +2962,6 @@
                 'stroke-linejoin="round" aria-hidden="true">' +
                 '<path d="M18.5 13.5V19a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2H11"/>' +
                 '<path d="M16.4 3.6a2.05 2.05 0 0 1 2.9 2.9L12 13.8l-3.9 1 1-3.9z"/></svg>';
-
     var CHEV_DOWN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" ' +
                     'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
                     'stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
@@ -3027,44 +2989,28 @@
       return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + time;
     }
 
-    /* 한 달이 지난 글은 읽는 김에 지운다. 단, 즐겨찾기가 켜져 있으면 남긴다. */
-    var HO_KEEP_DAYS = 30;
-
+    /* 한 달 지난 글 정리는 서버가 목록을 줄 때 알아서 한다 */
     function renderHandover() {
-      withStore('handover', 'readwrite', function (st) {
-        var req = st.getAll();
-        req.onsuccess = function () {
-          var cutoff = Date.now() - HO_KEEP_DAYS * 24 * 60 * 60 * 1000;
-          var keep = [];
-          req.result.forEach(function (p) {
-            if (!p.fav && new Date(p.at).getTime() < cutoff) st.delete(p.id);
-            else keep.push(p);
-          });
-          keep.sort(function (a, b) { return b.id - a.id; });
-          drawHandover(keep);
-        };
-        req.onerror = function () { toast('불러오지 못했어요'); };
-      });
+      apiGet('/api/items?type=handover').then(function (r) {
+        if (!r || !r.items) { netFail(); return; }
+        hoAll = r.items;
+        drawHandover(r.items);
+      }).catch(netFail);
     }
 
     function hoRow(p, withDate) {
-      var shots = [];
-      var media = (p.photos || []).map(function (blob, i) {
-        var url = URL.createObjectURL(blob);
-        hoUrls.push(url);
-        shots.push(url);
+      var media = (p.photos || []).map(function (url, i) {
         return '<button class="photo-open pressable" type="button" ' +
                  'data-hoshot="' + p.id + ':' + i + '" aria-label="사진 크게 보기">' +
                  '<img src="' + url + '" alt="">' +
                  '<span class="zoom">' + ZOOM + '</span>' +
                '</button>';
       }).join('');
-      hoShots[p.id] = shots;
 
       return '<div class="ho-item">' +
                '<p class="ho-when t-caption">' + hoWhen(p.at, withDate) +
-                 (p.editedAt ? ' · 수정됨' : '') + '</p>' +
-               (p.text ? '<p class="ho-text t-body1">' + esc(p.text) + '</p>' : '') +
+                 (p.edited_at ? ' · 수정됨' : '') + '</p>' +
+               (p.body ? '<p class="ho-text t-body1">' + esc(p.body) + '</p>' : '') +
                (media ? '<div class="row-photos">' + media + '</div>' : '') +
                '<div class="ho-foot">' +
                  '<button class="ho-fav pressable' + (p.fav ? ' is-on' : '') + '" ' +
@@ -3082,8 +3028,7 @@
              '</div>';
     }
 
-    /* 한 박스에 이만큼만 보여주고 나머지는 접어둔다.
-       안 그러면 글이 쌓일수록 '작성하기' 버튼이 계속 아래로 밀린다. */
+    /* 한 박스에 이만큼만 보여주고 나머지는 접어둔다 */
     var HO_LIMIT = 2;
     var hoOpen = { fav: false, today: false, past: false };
 
@@ -3109,10 +3054,6 @@
     }
 
     function drawHandover(all) {
-      hoUrls.forEach(function (u) { URL.revokeObjectURL(u); });
-      hoUrls = [];
-      hoShots = {};
-
       var fav = [], today = [], past = [];
       all.forEach(function (p) {
         if (p.fav) fav.push(p);
@@ -3120,52 +3061,51 @@
         else past.push(p);
       });
 
-      /* 중요한 글이 하나도 없으면 칸 자체를 감춘다 */
       hoFavSec.hidden = fav.length === 0;
       if (fav.length) hoBox(hoFavBox, hoFavCount, fav, true, 'fav', '');
-      else hoFavBox.innerHTML = '';   /* 반납한 사진 주소를 붙들고 있지 않게 */
+      else hoFavBox.innerHTML = '';
 
       hoBox(hoTodayBox, hoTodayCount, today, false, 'today', '오늘 올린 인수인계가 없어요');
       hoBox(hoPastBox,  hoPastCount,  past,  true,  'past',  '이전에 올린 인수인계가 없어요');
-
-      VIEWS.handover.querySelectorAll('[data-hofav]').forEach(function (b) {
-        b.addEventListener('click', function () { toggleFav(parseInt(b.dataset.hofav, 10)); });
-      });
-
-      VIEWS.handover.querySelectorAll('[data-hoedit]').forEach(function (b) {
-        b.addEventListener('click', function () { openHoSheet(parseInt(b.dataset.hoedit, 10)); });
-      });
-
-      renderHomeHo(fav, today);
 
       VIEWS.handover.querySelectorAll('[data-homore]').forEach(function (b) {
         b.addEventListener('click', function () {
           var k = b.dataset.homore;
           hoOpen[k] = !hoOpen[k];
-          renderHandover();
+          drawHandover(hoAll);
         });
+      });
+
+      VIEWS.handover.querySelectorAll('[data-hofav]').forEach(function (b) {
+        b.addEventListener('click', function () { toggleFav(b.dataset.hofav); });
+      });
+
+      VIEWS.handover.querySelectorAll('[data-hoedit]').forEach(function (b) {
+        b.addEventListener('click', function () { openHoSheet(b.dataset.hoedit); });
       });
 
       VIEWS.handover.querySelectorAll('[data-hoshot]').forEach(function (b) {
         b.addEventListener('click', function () {
           var q = b.dataset.hoshot.split(':');
-          openViewer(hoShots[q[0]], parseInt(q[1], 10));
+          var rec = hoAll.filter(function (x) { return String(x.id) === q[0]; })[0];
+          if (rec) openViewer(rec.photos, parseInt(q[1], 10));
         });
       });
 
       VIEWS.handover.querySelectorAll('[data-hodel]').forEach(function (b) {
         b.addEventListener('click', function () {
-          var id = parseInt(b.dataset.hodel, 10);
+          var id = b.dataset.hodel;
           confirmDialog('이 인수인계를 지울까요?', '지운 내용은 되돌릴 수 없어요.', function () {
-            withStore('handover', 'readwrite', function (st) {
-              st.delete(id).onsuccess = function () {
-                renderHandover();
-                toast('인수인계를 지웠어요');
-              };
-            });
+            apiDel('/api/items?type=handover&id=' + id).then(function (r) {
+              if (!r || r.error) { toast('지우지 못했어요'); return; }
+              renderHandover();
+              toast('인수인계를 지웠어요');
+            }).catch(netFail);
           });
         });
       });
+
+      renderHomeHo(fav, today);
     }
 
     /* ---------- 홈 화면 요약 ---------- */
@@ -3180,7 +3120,7 @@
             PEN_L + '</span>';
 
       var sub = on
-        ? esc((list[0].text || '사진만 있는 글').replace(/\s+/g, ' '))
+        ? esc((list[0].body || '사진만 있는 글').replace(/\s+/g, ' '))
         : '업로드한 게시물 없음';
 
       return '<button class="row pressable" type="button" data-goho="1">' +
@@ -3204,19 +3144,15 @@
     }
 
     function toggleFav(id) {
-      withStore('handover', 'readwrite', function (st) {
-        var g = st.get(id);
-        g.onsuccess = function () {
-          var rec = g.result;
-          if (!rec) return;
-          rec.fav = !rec.fav;
-          st.put(rec).onsuccess = function () {
-            renderHandover();
-            toast(rec.fav ? '중요한 인수인계로 옮겼어요'
-                          : '중요 표시를 껐어요. 한 달이 지난 글이면 곧 지워져요');
-          };
-        };
-      });
+      var rec = hoAll.filter(function (x) { return String(x.id) === String(id); })[0];
+      if (!rec) return;
+      var next = !rec.fav;
+      apiPost('/api/items?type=handover', { id: id, fav: next }).then(function (r) {
+        if (!r || r.error) { toast('바꾸지 못했어요'); return; }
+        renderHandover();
+        toast(next ? '중요한 인수인계로 옮겼어요'
+                   : '중요 표시를 껐어요. 한 달이 지난 글이면 곧 지워져요');
+      }).catch(netFail);
     }
 
     /* ---------- 작성 ---------- */
@@ -3225,10 +3161,10 @@
     }
 
     function renderHoPhotos() {
-      var html = hoDraft.photos.map(function (p, i) {
+      var html = hoDraft.photos.map(function (url, i) {
         return '<button class="photo-thumb pressable" type="button" data-hopic="' + i + '" ' +
                  'aria-label="사진 ' + (i + 1) + ' 빼기">' +
-                 '<img src="' + p.url + '" alt="">' +
+                 '<img src="' + url + '" alt="">' +
                  '<span class="x">' + XMARK + '</span>' +
                '</button>';
       }).join('');
@@ -3244,7 +3180,6 @@
         b.addEventListener('click', function () {
           var i = parseInt(b.dataset.hopic, 10);
           confirmDialog('이 사진을 뺄까요?', '아직 올리기 전이라 다시 넣을 수 있어요.', function () {
-            URL.revokeObjectURL(hoDraft.photos[i].url);
             hoDraft.photos.splice(i, 1);
             renderHoPhotos();
             validateHo();
@@ -3254,22 +3189,11 @@
     }
 
     hoInput.addEventListener('change', function () {
-      var files = Array.prototype.slice.call(hoInput.files)
-                    .filter(function (f) { return f.type.indexOf('image/') === 0; });
-      if (!files.length) { hoInput.value = ''; return; }
-
-      var room = MAX_PHOTOS - hoDraft.photos.length;
-      if (files.length > room) {
-        files = files.slice(0, room);
-        toast('사진은 최대 ' + MAX_PHOTOS + '장까지 넣을 수 있어요');
-      }
-
-      var left = files.length;
-      files.forEach(function (file) {
-        toSmallBlob(file, function (blob) {
-          if (blob) hoDraft.photos.push({ blob: blob, url: URL.createObjectURL(blob) });
-          if (--left === 0) { renderHoPhotos(); validateHo(); hoInput.value = ''; }
-        });
+      var files = pickedFiles(hoInput, hoDraft.photos);
+      hoInput.value = '';
+      uploadMany(files, hoDraft.photos, function () {
+        renderHoPhotos();
+        validateHo();
       });
     });
 
@@ -3277,7 +3201,6 @@
 
     /* id 를 주면 그 글을 고치는 창, 안 주면 새로 쓰는 창 */
     function openHoSheet(id) {
-      hoDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
       hoDraft = { photos: [] };
       hoEditId = null;
       hoText.value = '';
@@ -3285,80 +3208,52 @@
       hoSheetTitle.textContent = '인수인계 작성하기';
       hoSubmit.textContent = '올리기';
 
-      function show() {
-        renderHoPhotos();
-        validateHo();
-        hoScrim.classList.add('is-open');
-        hoSheet.classList.add('is-open');
-      }
-
-      if (!id) { show(); return; }
-
-      withStore('handover', 'readonly', function (st) {
-        var g = st.get(id);
-        g.onsuccess = function () {
-          var rec = g.result;
-          if (!rec) { show(); return; }
+      if (id) {
+        var rec = hoAll.filter(function (x) { return String(x.id) === String(id); })[0];
+        if (rec) {
           hoEditId = id;
-          hoText.value = rec.text || '';
-          hoDraft.photos = (rec.photos || []).map(function (b) {
-            return { blob: b, url: URL.createObjectURL(b) };
-          });
+          hoText.value = rec.body || '';
+          hoDraft.photos = (rec.photos || []).slice();
           hoSheetTitle.textContent = '인수인계 수정';
           hoSubmit.textContent = '수정 완료';
-          show();
-        };
-        g.onerror = function () { show(); };
-      });
+        }
+      }
+
+      renderHoPhotos();
+      validateHo();
+      hoScrim.classList.add('is-open');
+      hoSheet.classList.add('is-open');
+      syncLock();
     }
+
     function closeHoSheet() {
       hoScrim.classList.remove('is-open');
       hoSheet.classList.remove('is-open');
       hoText.blur();
+      syncLock();
     }
 
     hoSubmit.addEventListener('click', function () {
       if (hoSubmit.disabled) return;
-
-      var text = hoText.value.trim();
-      var blobs = hoDraft.photos.map(function (p) { return p.blob; });
       var editing = hoEditId;
+      var label = editing ? '수정 완료' : '올리기';
 
-      function done(msg) {
-        hoDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
-        hoDraft = { photos: [] };
-        hoEditId = null;
+      hoSubmit.disabled = true;
+      hoSubmit.textContent = '저장 중…';
+
+      var payload = { body: hoText.value.trim(), photos: hoDraft.photos };
+      if (editing) payload.id = editing;
+
+      apiPost('/api/items?type=handover', payload).then(function (r) {
+        hoSubmit.textContent = label;
+        if (!r || r.error) { hoSubmit.disabled = false; toast('저장하지 못했어요'); return; }
         closeHoSheet();
         renderHandover();
-        toast(msg);
-      }
-
-      withStore('handover', 'readwrite', function (st) {
-        if (!editing) {
-          var r = st.add({
-            id: Date.now(),
-            text: text,
-            at: new Date().toISOString(),
-            fav: false,
-            photos: blobs
-          });
-          r.onsuccess = function () { done('인수인계를 올렸어요'); };
-          r.onerror = function () { toast('올리지 못했어요. 사진을 줄여주세요'); };
-          return;
-        }
-
-        /* 올린 시각과 중요 표시는 그대로 두고 내용만 바꾼다 */
-        var g = st.get(editing);
-        g.onsuccess = function () {
-          var rec = g.result;
-          if (!rec) { toast('이미 지워진 글이에요'); return; }
-          rec.text = text;
-          rec.photos = blobs;
-          rec.editedAt = new Date().toISOString();
-          var p = st.put(rec);
-          p.onsuccess = function () { done('인수인계를 수정했어요'); };
-          p.onerror = function () { toast('수정하지 못했어요. 사진을 줄여주세요'); };
-        };
+        toast(editing ? '인수인계를 수정했어요' : '인수인계를 올렸어요');
+      }).catch(function () {
+        hoSubmit.textContent = label;
+        hoSubmit.disabled = false;
+        netFail();
       });
     });
 
@@ -3367,8 +3262,12 @@
     hoScrim.addEventListener('click', closeHoSheet);
 
     /* 앱을 켜둔 채 자정이 지나면 오늘/이전이 어긋난다 — 돌아올 때 다시 그린다 */
+    /* 다른 사람이 바꿨을 수 있으니 화면으로 돌아올 때마다 다시 받아온다 */
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) renderHandover();
+      if (document.hidden) return;
+      loadKeys();
+      renderHandover();
+      renderMemo();
     });
 
     renderHandover();
@@ -3387,10 +3286,13 @@
     var mmSubmit     = document.getElementById('mmSubmit');
     var mmSheetTitle = document.getElementById('mmSheetTitle');
 
-    var mmDraft  = { photos: [] };
-    var mmEditId = null;
-    var mmUrls   = [];
-    var mmShots  = {};
+    var mmDraft      = { photos: [] };
+    var mmEditId     = null;
+    var mmAll        = [];
+
+    var mmDetail     = document.getElementById('mmDetail');
+    var mmDetailBody = document.getElementById('mmDetailBody');
+    var mmOpenId     = null;
 
     var MM_ADD =
       '<button class="photo-add pressable" type="button" id="mmPhotoAdd">' +
@@ -3399,18 +3301,18 @@
         '<path d="M12 6v12M6 12h12"/></svg>추가</button>';
 
     function renderMemo() {
-      withStore('memo', 'readonly', function (st) {
-        var req = st.getAll();
-        req.onsuccess = function () {
-          drawMemo(req.result.slice().sort(function (a, b) { return b.id - a.id; }));
-        };
-        req.onerror = function () { toast('불러오지 못했어요'); };
-      });
+      apiGet('/api/items?type=memo').then(function (r) {
+        if (!r || !r.items) { netFail(); return; }
+        mmAll = r.items;
+        drawMemo(r.items);
+        if (mmOpenId) {
+          var rec = mmAll.filter(function (x) { return String(x.id) === String(mmOpenId); })[0];
+          if (rec) drawMmDetail(rec); else closeMmDetail();
+        }
+      }).catch(netFail);
     }
 
     function drawMemo(list) {
-      mmUrls.forEach(function (u) { URL.revokeObjectURL(u); });
-      mmUrls = [];
       mmCount.textContent = list.length;
 
       if (!list.length) {
@@ -3419,17 +3321,14 @@
       }
 
       mmBox.innerHTML = list.map(function (p) {
-        var first = (p.photos && p.photos.length) ? p.photos[0] : null;
-        var thumb = '';
-        if (first) {
-          var url = URL.createObjectURL(first);
-          mmUrls.push(url);
-          thumb = '<span class="thumb"><img src="' + url + '" alt=""></span>';
-        }
+        var shots = p.photos || [];
+        var thumb = shots.length
+          ? '<span class="thumb"><img src="' + shots[0] + '" alt=""></span>'
+          : '';
         /* 사진만 있는 메모는 글자 자리가 비어 허전하다 */
-        var txt = p.text ? esc(p.text) : (first ? '사진 ' + p.photos.length + '장' : '');
+        var txt = p.body ? esc(p.body) : (shots.length ? '사진 ' + shots.length + '장' : '');
 
-        return '<button class="mm-card pressable' + (first ? ' has-shot' : '') + '" ' +
+        return '<button class="mm-card pressable' + (shots.length ? ' has-shot' : '') + '" ' +
                  'type="button" data-mmopen="' + p.id + '">' +
                  thumb +
                  '<span class="body">' +
@@ -3440,30 +3339,20 @@
       }).join('');
 
       mmBox.querySelectorAll('[data-mmopen]').forEach(function (b) {
-        b.addEventListener('click', function () { openMmDetail(parseInt(b.dataset.mmopen, 10)); });
+        b.addEventListener('click', function () { openMmDetail(b.dataset.mmopen); });
       });
     }
 
     /* ---------- 상세 ---------- */
-    var mmDetail     = document.getElementById('mmDetail');
-    var mmDetailBody = document.getElementById('mmDetailBody');
-    var mmShotUrls   = [];
-    var mmOpenId     = null;
-
     function openMmDetail(id) {
-      withStore('memo', 'readonly', function (st) {
-        var g = st.get(id);
-        g.onsuccess = function () {
-          var rec = g.result;
-          if (!rec) { toast('이미 지워진 메모예요'); return; }
-          drawMmDetail(rec);
-          mmOpenId = id;
-          mmDetail.classList.add('is-open');
-          mmDetail.setAttribute('aria-hidden', 'false');
-          mmDetailBody.scrollTop = 0;
-          syncLock();
-        };
-      });
+      var rec = mmAll.filter(function (x) { return String(x.id) === String(id); })[0];
+      if (!rec) { toast('이미 지워진 메모예요'); return; }
+      mmOpenId = id;
+      drawMmDetail(rec);
+      mmDetail.classList.add('is-open');
+      mmDetail.setAttribute('aria-hidden', 'false');
+      mmDetailBody.scrollTop = 0;
+      syncLock();
     }
 
     function closeMmDetail() {
@@ -3474,20 +3363,13 @@
     }
 
     function drawMmDetail(rec) {
-      mmShotUrls.forEach(function (u) { URL.revokeObjectURL(u); });
-      mmShotUrls = [];
-
-      var shots = (rec.photos || []).map(function (blob) {
-        var url = URL.createObjectURL(blob);
-        mmShotUrls.push(url);
-        return url;
-      });
+      var shots = rec.photos || [];
 
       mmDetailBody.innerHTML =
         '<div class="mm-detail">' +
           '<p class="ho-when t-caption">' + hoWhen(rec.at, true) +
-            (rec.editedAt ? ' · 수정됨' : '') + '</p>' +
-          (rec.text ? '<p class="mm-full">' + esc(rec.text) + '</p>' : '') +
+            (rec.edited_at ? ' · 수정됨' : '') + '</p>' +
+          (rec.body ? '<p class="mm-full">' + esc(rec.body) + '</p>' : '') +
           (shots.length
             ? '<div class="mm-shots">' + shots.map(function (u, i) {
                 return '<button class="pressable" type="button" data-mmbig="' + i + '" ' +
@@ -3502,7 +3384,6 @@
           openViewer(shots, parseInt(b.dataset.mmbig, 10));
         });
       });
-
     }
 
     document.getElementById('mmDetailBack').addEventListener('click', closeMmDetail);
@@ -3515,13 +3396,12 @@
       var id = mmOpenId;
       if (!id) return;
       confirmDialog('이 메모를 지울까요?', '지운 메모는 되돌릴 수 없어요.', function () {
-        withStore('memo', 'readwrite', function (st) {
-          st.delete(id).onsuccess = function () {
-            closeMmDetail();
-            renderMemo();
-            toast('메모를 지웠어요');
-          };
-        });
+        apiDel('/api/items?type=memo&id=' + id).then(function (r) {
+          if (!r || r.error) { toast('지우지 못했어요'); return; }
+          closeMmDetail();
+          renderMemo();
+          toast('메모를 지웠어요');
+        }).catch(netFail);
       });
     });
 
@@ -3531,10 +3411,10 @@
     }
 
     function renderMmPhotos() {
-      var html = mmDraft.photos.map(function (p, i) {
+      var html = mmDraft.photos.map(function (url, i) {
         return '<button class="photo-thumb pressable" type="button" data-mmpic="' + i + '" ' +
                  'aria-label="사진 ' + (i + 1) + ' 빼기">' +
-                 '<img src="' + p.url + '" alt="">' +
+                 '<img src="' + url + '" alt="">' +
                  '<span class="x">' + XMARK + '</span>' +
                '</button>';
       }).join('');
@@ -3550,7 +3430,6 @@
         b.addEventListener('click', function () {
           var i = parseInt(b.dataset.mmpic, 10);
           confirmDialog('이 사진을 뺄까요?', '아직 저장하기 전이라 다시 넣을 수 있어요.', function () {
-            URL.revokeObjectURL(mmDraft.photos[i].url);
             mmDraft.photos.splice(i, 1);
             renderMmPhotos();
             validateMm();
@@ -3560,29 +3439,17 @@
     }
 
     mmInput.addEventListener('change', function () {
-      var files = Array.prototype.slice.call(mmInput.files)
-                    .filter(function (f) { return f.type.indexOf('image/') === 0; });
-      if (!files.length) { mmInput.value = ''; return; }
-
-      var room = MAX_PHOTOS - mmDraft.photos.length;
-      if (files.length > room) {
-        files = files.slice(0, room);
-        toast('사진은 최대 ' + MAX_PHOTOS + '장까지 넣을 수 있어요');
-      }
-
-      var left = files.length;
-      files.forEach(function (file) {
-        toSmallBlob(file, function (blob) {
-          if (blob) mmDraft.photos.push({ blob: blob, url: URL.createObjectURL(blob) });
-          if (--left === 0) { renderMmPhotos(); validateMm(); mmInput.value = ''; }
-        });
+      var files = pickedFiles(mmInput, mmDraft.photos);
+      mmInput.value = '';
+      uploadMany(files, mmDraft.photos, function () {
+        renderMmPhotos();
+        validateMm();
       });
     });
 
     mmText.addEventListener('input', validateMm);
 
     function openMmSheet(id) {
-      mmDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
       mmDraft = { photos: [] };
       mmEditId = null;
       mmText.value = '';
@@ -3590,80 +3457,52 @@
       mmSheetTitle.textContent = '메모 작성하기';
       mmSubmit.textContent = '저장하기';
 
-      function show() {
-        renderMmPhotos();
-        validateMm();
-        mmScrim.classList.add('is-open');
-        mmSheet.classList.add('is-open');
-      }
-
-      if (!id) { show(); return; }
-
-      withStore('memo', 'readonly', function (st) {
-        var g = st.get(id);
-        g.onsuccess = function () {
-          var rec = g.result;
-          if (!rec) { show(); return; }
+      if (id) {
+        var rec = mmAll.filter(function (x) { return String(x.id) === String(id); })[0];
+        if (rec) {
           mmEditId = id;
-          mmText.value = rec.text || '';
-          mmDraft.photos = (rec.photos || []).map(function (b) {
-            return { blob: b, url: URL.createObjectURL(b) };
-          });
+          mmText.value = rec.body || '';
+          mmDraft.photos = (rec.photos || []).slice();
           mmSheetTitle.textContent = '메모 수정';
           mmSubmit.textContent = '수정 완료';
-          show();
-        };
-        g.onerror = function () { show(); };
-      });
+        }
+      }
+
+      renderMmPhotos();
+      validateMm();
+      mmScrim.classList.add('is-open');
+      mmSheet.classList.add('is-open');
+      syncLock();
     }
 
     function closeMmSheet() {
       mmScrim.classList.remove('is-open');
       mmSheet.classList.remove('is-open');
       mmText.blur();
+      syncLock();
     }
 
     mmSubmit.addEventListener('click', function () {
       if (mmSubmit.disabled) return;
-
-      var text = mmText.value.trim();
-      var blobs = mmDraft.photos.map(function (p) { return p.blob; });
       var editing = mmEditId;
+      var label = editing ? '수정 완료' : '저장하기';
 
-      function done(msg) {
-        mmDraft.photos.forEach(function (p) { URL.revokeObjectURL(p.url); });
-        mmDraft = { photos: [] };
-        mmEditId = null;
+      mmSubmit.disabled = true;
+      mmSubmit.textContent = '저장 중…';
+
+      var payload = { body: mmText.value.trim(), photos: mmDraft.photos };
+      if (editing) payload.id = editing;
+
+      apiPost('/api/items?type=memo', payload).then(function (r) {
+        mmSubmit.textContent = label;
+        if (!r || r.error) { mmSubmit.disabled = false; toast('저장하지 못했어요'); return; }
         closeMmSheet();
         renderMemo();
-        if (mmOpenId) openMmDetail(mmOpenId);   /* 상세를 열어둔 채 고쳤다면 갱신 */
-        toast(msg);
-      }
-
-      withStore('memo', 'readwrite', function (st) {
-        if (!editing) {
-          var r = st.add({
-            id: Date.now(),
-            text: text,
-            at: new Date().toISOString(),
-            photos: blobs
-          });
-          r.onsuccess = function () { done('메모를 저장했어요'); };
-          r.onerror = function () { toast('저장하지 못했어요. 사진을 줄여주세요'); };
-          return;
-        }
-
-        var g = st.get(editing);
-        g.onsuccess = function () {
-          var rec = g.result;
-          if (!rec) { toast('이미 지워진 메모예요'); return; }
-          rec.text = text;
-          rec.photos = blobs;
-          rec.editedAt = new Date().toISOString();
-          var p = st.put(rec);
-          p.onsuccess = function () { done('메모를 수정했어요'); };
-          p.onerror = function () { toast('수정하지 못했어요. 사진을 줄여주세요'); };
-        };
+        toast(editing ? '메모를 수정했어요' : '메모를 저장했어요');
+      }).catch(function () {
+        mmSubmit.textContent = label;
+        mmSubmit.disabled = false;
+        netFail();
       });
     });
 
@@ -3673,7 +3512,8 @@
 
     renderMemo();
 
-    render();
+    render();      /* 빈 상태로 먼저 그리고 */
+    loadKeys();    /* 서버 내용이 오면 다시 그린다 */
   })();
 </script>
 
