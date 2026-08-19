@@ -880,13 +880,16 @@
     flex: none;
   }
   .pick .name { flex: 1; }
-  .pick .check { color: var(--tds-fg-brand); flex: none; opacity: 0; transition: opacity var(--dur-fast) var(--ease); }
-  /* 선택 표시는 class 로 건다.
-     사파리는 aria-pressed 같은 '속성'이 바뀌어도 그 안쪽(체크 아이콘)까지는
-     다시 그리지 않는 일이 있어, 이전에 고른 항목의 체크가 남아
-     두 개가 동시에 선택된 것처럼 보였다. */
-  .pick button.is-on .check,
-  .pick button[aria-pressed="true"] .check { opacity: 1; }
+  /* 체크 자리는 늘 비워둔다 — 아이콘은 JS 가 넣었다 뺐다 한다.
+     사파리는 opacity 로 숨긴 아이콘을 화면에서 안 지우는 일이 있어,
+     이전에 고른 항목의 체크가 남아 두 개가 선택된 것처럼 보였다.
+     아예 없앴다 다시 만들면 그럴 수가 없다. */
+  .pick .check {
+    color: var(--tds-fg-brand);
+    flex: none;
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
   .pick button.is-on .name,
   .pick button[aria-pressed="true"] .name { font-weight: 600; }
 
@@ -1995,19 +1998,19 @@
         <div class="pick" id="statusPick">
           <button class="pressable" type="button" data-s="ok" aria-pressed="false" style="--c:var(--st-ok)">
             <span class="dot"></span><span class="name t-body1">정상</span>
-            <svg class="check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            <span class="check" aria-hidden="true"></span>
           </button>
           <button class="pressable" type="button" data-s="lost" aria-pressed="false" style="--c:var(--st-lost)">
             <span class="dot"></span><span class="name t-body1">분실</span>
-            <svg class="check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            <span class="check" aria-hidden="true"></span>
           </button>
           <button class="pressable" type="button" data-s="broken" aria-pressed="false" style="--c:var(--st-broken)">
             <span class="dot"></span><span class="name t-body1">고장</span>
-            <svg class="check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            <span class="check" aria-hidden="true"></span>
           </button>
           <button class="pressable" type="button" data-s="etc" aria-pressed="false" style="--c:var(--st-etc)">
             <span class="dot"></span><span class="name t-body1">기타</span>
-            <svg class="check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            <span class="check" aria-hidden="true"></span>
           </button>
         </div>
       </div>
@@ -2225,7 +2228,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.1610';
+    var BUILD = '20260819.1635';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
@@ -2625,14 +2628,20 @@
       rangeHint.textContent = '1 – ' + TOTAL[draft.g];
     }
 
+    var CHECK_SVG =
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+
     function syncStatus() {
       pick.querySelectorAll('button').forEach(function (b) {
         var on = b.dataset.s === draft.s;
         b.setAttribute('aria-pressed', String(on));
         b.classList.toggle('is-on', on);
-        /* 체크 아이콘은 직접 켜고 끈다 — 사파리가 안 지워주는 경우가 있다 */
+        /* 고른 것에만 체크를 만들어 넣고, 나머지는 아예 지운다.
+           숨기는 게 아니라 없애는 것이라 화면에 남을 수가 없다. */
         var c = b.querySelector('.check');
-        if (c) c.style.opacity = on ? '1' : '0';
+        if (c) c.innerHTML = on ? CHECK_SVG : '';
       });
     }
 
