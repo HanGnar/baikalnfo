@@ -881,7 +881,13 @@
   }
   .pick .name { flex: 1; }
   .pick .check { color: var(--tds-fg-brand); flex: none; opacity: 0; transition: opacity var(--dur-fast) var(--ease); }
+  /* 선택 표시는 class 로 건다.
+     사파리는 aria-pressed 같은 '속성'이 바뀌어도 그 안쪽(체크 아이콘)까지는
+     다시 그리지 않는 일이 있어, 이전에 고른 항목의 체크가 남아
+     두 개가 동시에 선택된 것처럼 보였다. */
+  .pick button.is-on .check,
   .pick button[aria-pressed="true"] .check { opacity: 1; }
+  .pick button.is-on .name,
   .pick button[aria-pressed="true"] .name { font-weight: 600; }
 
   /* 사진 */
@@ -2219,7 +2225,7 @@
   (function () {
     'use strict';
 
-    var BUILD = '20260819.0548';
+    var BUILD = '20260819.1610';
 
     /* 상단바 구분선 — 지금 보이는 탭의 큰 제목을 기준으로 잡는다 */
     var navbar = document.getElementById('navbar');
@@ -2621,7 +2627,12 @@
 
     function syncStatus() {
       pick.querySelectorAll('button').forEach(function (b) {
-        b.setAttribute('aria-pressed', String(b.dataset.s === draft.s));
+        var on = b.dataset.s === draft.s;
+        b.setAttribute('aria-pressed', String(on));
+        b.classList.toggle('is-on', on);
+        /* 체크 아이콘은 직접 켜고 끈다 — 사파리가 안 지워주는 경우가 있다 */
+        var c = b.querySelector('.check');
+        if (c) c.style.opacity = on ? '1' : '0';
       });
     }
 
